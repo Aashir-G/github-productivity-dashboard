@@ -1,0 +1,7 @@
+body { font-family: Arial, sans-serif; width: 260px; padding: 12px; }
+h1 { font-size: 14px; margin: 0 0 8px; }
+.muted { font-size: 12px; opacity: 0.7; margin: 0 0 10px; }
+label { font-size: 12px; display: block; margin: 8px 0 4px; }
+input { width: 100%; padding: 8px; box-sizing: border-box; }
+button { margin-top: 8px; width: 100%; padding: 8px; }
+.status { margin-top: 10px; font-size: 12px; }
