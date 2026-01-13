@@ -458,6 +458,416 @@ body {
   color: var(--text);
 }
 
+.goalSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.goalInput {
+  display: flex;
+  gap: 8px;
+}
+
+.goalInput input {
+  flex: 1;
+}
+
+.goalInput .btn {
+  flex: none;
+  padding: 8px 20px;
+}
+
+.goalDisplay {
+  border: 1px solid var(--border);
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.goalDisplay.hidden {
+  display: none;
+}
+
+.goalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.goalLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.goalClear {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.goalClear:hover {
+  background: var(--card);
+  color: var(--text);
+}
+
+.goalProgress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.goalBar {
+  height: 24px;
+  background: var(--card);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.goalFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accentHover));
+  border-radius: 6px;
+  transition: width 0.5s ease;
+  min-width: 0%;
+}
+
+.goalText {
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text);
+}
+
+.goalStatus {
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--card);
+  color: var(--muted);
+}
+
+.insightsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.insightItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 6px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  animation: slideIn 0.3s ease both;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.insightIcon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.insightContent {
+  flex: 1;
+}
+
+.insightText {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.insightMeta {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.reputationContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.scoreDisplay {
+  text-align: center;
+  padding: 20px;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+}
+
+.scoreNumber {
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1;
+  margin: 8px 0;
+  background: linear-gradient(135deg, var(--accent), var(--accentHover));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.scoreTier {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 8px;
+}
+
+.scorePercentile {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.scoreBar {
+  height: 12px;
+  background: var(--card);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 12px 0;
+  position: relative;
+}
+
+.scoreBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  border-radius: 6px;
+  transition: width 1s ease;
+}
+
+.scoreBarFill.excellent {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+.scoreBarFill.verygood {
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
+}
+
+.scoreBarFill.good {
+  background: linear-gradient(90deg, #8b5cf6, #7c3aed);
+}
+
+.scoreBarFill.fair {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.scoreBarFill.poor {
+  background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.scoreFactors {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.scoreFactor {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #ffffff;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.factorLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.factorValue {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.factorRating {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.scoreImprovement {
+  padding: 12px;
+  background: #ffffff;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  margin-top: 8px;
+}
+
+.improvementTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.improvementList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.improvementItem {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+  padding-left: 16px;
+  position: relative;
+}
+
+.improvementItem::before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.competitiveContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.comparisonGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.comparisonCard {
+  padding: 12px;
+  background: #ffffff;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+
+.comparisonLabel {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.comparisonValue {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.comparisonDelta {
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.comparisonDelta.positive {
+  color: var(--good);
+}
+
+.comparisonDelta.negative {
+  color: var(--bad);
+}
+
+.comparisonDelta.neutral {
+  color: var(--muted);
+}
+
+.benchmarkSection {
+  padding: 12px;
+  background: #ffffff;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.benchmarkTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.benchmarkItems {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.benchmarkItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.benchmarkName {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.benchmarkBar {
+  flex: 1;
+  margin: 0 12px;
+  height: 6px;
+  background: var(--card);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.benchmarkBarFill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.benchmarkPercent {
+  color: var(--muted);
+  font-weight: 600;
+  min-width: 35px;
+  text-align: right;
+}
+
 input {
   width: 100%;
   box-sizing: border-box;
@@ -518,123 +928,103 @@ input::placeholder {
 }
 
 .titleSm { 
-  font-size: 14px; 
-  font-weight: 600; 
+  font-size: 14px
+  ;
+font-weight: 600;
 }
-
-.subSm { 
-  font-size: 12px; 
-  color: var(--muted); 
-  margin-top: 2px;
+.subSm {
+font-size: 12px;
+color: var(--muted);
+margin-top: 2px;
 }
-
 .badge {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--accent);
-  border: 1px solid var(--accent);
-  background: #ddf4ff;
-  padding: 4px 10px;
-  border-radius: 6px;
-  white-space: nowrap;
+font-size: 12px;
+font-weight: 500;
+color: var(--accent);
+border: 1px solid var(--accent);
+background: #ddf4ff;
+padding: 4px 10px;
+border-radius: 6px;
+white-space: nowrap;
 }
-
-.exportBtns {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 .link {
-  display: block;
-  margin-top: 20px;
-  text-align: center;
-  font-size: 13px;
-  color: var(--muted);
-  text-decoration: none;
-  font-weight: 500;
+display: block;
+margin-top: 20px;
+text-align: center;
+font-size: 13px;
+color: var(--muted);
+text-decoration: none;
+font-weight: 500;
 }
-
-.link:hover { 
-  text-decoration: underline;
-  color: var(--accent);
+.link:hover {
+text-decoration: underline;
+color: var(--accent);
 }
-
 @media (max-width: 400px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .insGrid {
-    grid-template-columns: 1fr;
-  }
-  
-  .actions {
-    flex-direction: column;
-  }
-  
-  .btn {
-    width: 100%;
-  }
+.grid {
+grid-template-columns: 1fr;
 }
-
+.insGrid {
+grid-template-columns: 1fr;
+}
+.actions {
+flex-direction: column;
+}
+.btn {
+width: 100%;
+}
+}
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+*,
+*::before,
+*::after {
+animation-duration: 0.01ms !important;
+animation-iteration-count: 1 !important;
+transition-duration: 0.01ms !important;
 }
-
+}
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0d1117;
-    --card: #161b22;
-    --border: #30363d;
-    --text: #c9d1d9;
-    --muted: #8b949e;
-    --accent: #58a6ff;
-    --accentHover: #79c0ff;
-  }
-  
-  .face {
-    background: var(--card);
-  }
-  
-  input {
-    background: var(--bg);
-    color: var(--text);
-  }
-  
-  .tip {
-    background: var(--card);
-    color: var(--text);
-    border: 1px solid var(--border);
-  }
-  
-  .muted code {
-    background: var(--bg);
-  }
-  
-  .insBox, .chip {
-    background: var(--bg);
-  }
-  
-  .badge {
-    background: #1c2d41;
-  }
-  
-  .arrow.good {
-    background: #1c2d1c;
-  }
-  
-  .arrow.bad {
-    background: #3d1f1f;
-  }
-  
-  .arrow.neutral {
-    background: #1c2d41;
-  }
+:root {
+--bg: #0d1117;
+--card: #161b22;
+--border: #30363d;
+--text: #c9d1d9;
+--muted: #8b949e;
+--accent: #58a6ff;
+--accentHover: #79c0ff;
+}
+.face {
+background: var(--card);
+}
+input {
+background: var(--bg);
+color: var(--text);
+}
+.tip {
+background: var(--card);
+color: var(--text);
+border: 1px solid var(--border);
+}
+.muted code {
+background: var(--bg);
+}
+.insBox, .chip {
+background: var(--bg);
+}
+.badge {
+background: #1c2d41;
+}
+.arrow.good {
+background: #1c2d1c;
+}
+.arrow.bad {
+background: #3d1f1f;
+}
+.arrow.neutral {
+background: #1c2d41;
+}
+.goalDisplay, .insightItem, .scoreDisplay, .scoreFactor,
+.scoreImprovement, .comparisonCard, .benchmarkSection {
+background: var(--bg);
+}
 }

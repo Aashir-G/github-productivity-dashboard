@@ -106,14 +106,47 @@
           </div>
 
           <div class="card">
-            <div class="cardtitle">Export Data</div>
-            <div class="exportBtns">
-              <button id="exportJSON" class="btn full">
-                Export as JSON
-              </button>
-              <button id="exportCSV" class="btn full">
-                Export as CSV
-              </button>
+            <div class="cardtitle">Goal Tracking</div>
+            <div class="goalSection">
+              <div class="goalInput">
+                <input 
+                  id="goalInput" 
+                  type="number" 
+                  min="1" 
+                  placeholder="Set weekly goal..." 
+                  aria-label="Weekly contribution goal"
+                />
+                <button id="setGoal" class="btn primary">Set</button>
+              </div>
+              <div id="goalDisplay" class="goalDisplay hidden">
+                <div class="goalHeader">
+                  <div class="goalLabel">Weekly Goal</div>
+                  <button id="clearGoal" class="goalClear" title="Clear goal">✕</button>
+                </div>
+                <div class="goalProgress">
+                  <div class="goalBar">
+                    <div id="goalFill" class="goalFill"></div>
+                  </div>
+                  <div class="goalText">
+                    <span id="goalCurrent">0</span> / <span id="goalTarget">0</span>
+                  </div>
+                </div>
+                <div class="goalStatus" id="goalStatus"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="cardtitle">Developer Reputation Score</div>
+            <div id="reputationContainer" class="reputationContainer">
+              <div class="muted">Analyze a profile to see reputation score</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="cardtitle">Competitive Analysis</div>
+            <div id="competitiveContainer" class="competitiveContainer">
+              <div class="muted">Compare against developer benchmarks</div>
             </div>
           </div>
 
