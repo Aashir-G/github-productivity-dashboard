@@ -6,25 +6,41 @@
   </head>
   <body>
     <div class="wrap">
+      <!-- HERO -->
       <div class="hero">
-        <div class="logo">🐙</div>
+        <div class="logo" id="avatar">🐙</div>
         <div class="hgroup">
           <div class="h1">Welcome to GitHubDash</div>
           <div class="h2">Track your GitHub activity in one place.</div>
+          <div class="pillrow">
+            <span class="pill" id="ctxPill">No context</span>
+            <span class="pill muted" id="ratePill">API: -</span>
+          </div>
         </div>
       </div>
 
+      <!-- PRIMARY ACTIONS -->
       <div class="actions">
         <button id="analyze" class="btn primary">Analyze current page</button>
         <button id="refresh" class="btn">Refresh</button>
       </div>
 
+      <!-- QUICK ACTIONS -->
+      <div class="quick">
+        <button id="openProfile" class="chip">Open Profile</button>
+        <button id="openRepo" class="chip">Open Repo</button>
+        <button id="copySummary" class="chip">Copy Summary</button>
+      </div>
+
+      <!-- TABS -->
       <div class="tabs">
         <button class="tab active" data-tab="overview">Overview</button>
         <button class="tab" data-tab="trend">Trend</button>
+        <button class="tab" data-tab="insights">Insights</button>
         <button class="tab" data-tab="settings">Settings</button>
       </div>
 
+      <!-- OVERVIEW -->
       <div class="panel" id="panel-overview">
         <div class="seg">
           <button class="segbtn active" data-days="7">7d</button>
@@ -47,23 +63,99 @@
           </div>
         </div>
 
-        <div class="foot" id="foot">Open a GitHub profile or repo, then click Analyze.</div>
+        <div class="grid2">
+          <div class="metric">
+            <div class="k">Active Days</div>
+            <div class="v" id="m-active">-</div>
+          </div>
+          <div class="metric">
+            <div class="k">Avg / day</div>
+            <div class="v" id="m-avg">-</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px;">
+          <div class="cardtitle">Last 30 days heat strip</div>
+          <div class="heat" id="heat"></div>
+          <div class="foot" id="foot">Open a GitHub profile or repo, then click Analyze.</div>
+        </div>
+
+        <div class="card" style="margin-top:12px;">
+          <div class="cardtitle">Top active repos (recent pushes)</div>
+          <div class="list" id="topRepos">
+            <div class="muted">Analyze to load repos.</div>
+          </div>
+        </div>
       </div>
 
+      <!-- TREND -->
       <div class="panel hidden" id="panel-trend">
         <div class="card">
           <div class="cardtitle">Push trend</div>
           <div class="bars" id="bars"></div>
+          <div class="foot" id="trendFoot"></div>
         </div>
-        <div class="foot" id="trendFoot"></div>
+
+        <div class="card" style="margin-top:12px;">
+          <div class="cardtitle">Recent profiles</div>
+          <div class="list" id="recentUsers">
+            <div class="muted">No recent users yet.</div>
+          </div>
+        </div>
       </div>
 
+      <!-- INSIGHTS -->
+      <div class="panel hidden" id="panel-insights">
+        <div class="card">
+          <div class="cardtitle">Insights</div>
+          <div class="insrow">
+            <div class="ins">
+              <div class="k">Weekend pushes</div>
+              <div class="v2" id="m-weekend">-</div>
+            </div>
+            <div class="ins">
+              <div class="k">Weekday pushes</div>
+              <div class="v2" id="m-weekday">-</div>
+            </div>
+          </div>
+
+          <div class="insrow" style="margin-top:10px;">
+            <div class="ins">
+              <div class="k">Peak day</div>
+              <div class="v2" id="m-peak">-</div>
+            </div>
+            <div class="ins">
+              <div class="k">Consistency</div>
+              <div class="v2" id="m-consistency">-</div>
+            </div>
+          </div>
+
+          <div class="foot" id="insFoot">Analyze to generate insights.</div>
+        </div>
+
+        <div class="card" style="margin-top:12px;">
+          <div class="cardtitle">Export</div>
+          <button id="copyBullet" class="btn primary" style="margin-top:8px;">Copy resume bullet</button>
+          <button id="copyMarkdown" class="btn" style="margin-top:8px;">Copy markdown summary</button>
+          <div class="foot" id="exportStatus"></div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
       <div class="panel hidden" id="panel-settings">
         <div class="card">
           <div class="cardtitle">GitHub Token (optional)</div>
-          <div class="muted">Adds higher rate limits and more reliable fetching.</div>
+          <div class="muted">Higher rate limits and more reliable fetching.</div>
           <input id="token" type="password" placeholder="Paste token here" />
           <button id="saveToken" class="btn primary" style="margin-top:10px;">Save token</button>
+
+          <div class="setrow">
+            <label class="check">
+              <input type="checkbox" id="autoAnalyze" />
+              <span>Auto-analyze on GitHub tabs</span>
+            </label>
+          </div>
+
           <div class="foot" id="status"></div>
         </div>
       </div>
