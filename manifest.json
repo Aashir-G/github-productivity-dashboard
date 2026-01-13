@@ -1,0 +1,23 @@
+{
+  "name": "GitHub Productivity Dashboard",
+  "description": "Overlay a productivity dashboard on GitHub profiles and repos.",
+  "version": "1.0.0",
+  "manifest_version": 3,
+  "permissions": ["storage"],
+  "host_permissions": ["https://api.github.com/*"],
+  "background": {
+    "service_worker": "src/sw.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://github.com/*"],
+      "js": ["src/content.js"],
+      "css": ["src/styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "GitHub Dashboard",
+    "default_popup": "ui/popup.html"
+  }
+}
