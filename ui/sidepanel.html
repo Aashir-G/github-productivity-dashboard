@@ -13,11 +13,11 @@
           <div class="face">🐙</div>
         </div>
 
-        <div class="title" id="twTitle" aria-label="Welcome title"></div>
+        <div class="title" id="twTitle"></div>
 
         <div class="desc">
-          Your personal GitHub productivity dashboard. Analyze activity, spot streaks,
-          and track patterns in one place.
+          Your personal GitHub productivity dashboard. Contributions here are estimated from
+          public activity: commits, PRs opened, and issues opened.
         </div>
 
         <div class="actions">
@@ -26,7 +26,6 @@
         </div>
       </div>
 
-      <!-- CONTENT AREA (fades in under buttons) -->
       <div id="content" class="content hidden">
         <!-- Analyze panel -->
         <div id="panelAnalyze" class="panel hidden">
@@ -43,30 +42,58 @@
 
           <div class="grid">
             <div class="metric">
-              <div class="k">Pushes</div>
-              <div class="v" id="m-pushes">-</div>
+              <div class="k">Contributions</div>
+              <div class="v" id="m-contrib">-</div>
+              <div class="mini" id="m-breakdown">-</div>
             </div>
             <div class="metric">
-              <div class="k">Streak</div>
-              <div class="v" id="m-streak">-</div>
+              <div class="k">Best streak</div>
+              <div class="v" id="m-beststreak">-</div>
+              <div class="mini">max consecutive active days</div>
             </div>
             <div class="metric">
-              <div class="k">Best Day</div>
+              <div class="k">Best day</div>
               <div class="v" id="m-best">-</div>
+              <div class="mini" id="m-bestcount">-</div>
             </div>
           </div>
 
           <div class="card" style="margin-top:12px;">
             <div class="cardtitle">Trend</div>
-            <div class="bars" id="bars"></div>
+            <div class="barsWrap">
+              <div class="bars" id="bars"></div>
+              <div class="tip hidden" id="tip"></div>
+            </div>
             <div class="foot" id="foot">Click Analyze profile to load data.</div>
           </div>
 
           <div class="card" style="margin-top:12px;">
-            <div class="cardtitle">Quick export</div>
-            <button id="copyBullet" class="btn primary full">Copy resume bullet</button>
-            <button id="copySummary" class="btn full" style="margin-top:8px;">Copy summary</button>
-            <div class="foot" id="exportStatus"></div>
+            <div class="cardtitle">Insights</div>
+            <div class="insGrid">
+              <div class="insBox">
+                <div class="k">Avg commits per day</div>
+                <div class="v" id="m-avgcommits">-</div>
+              </div>
+              <div class="insBox">
+                <div class="k">Consistency</div>
+                <div class="consRow">
+                  <div class="v" id="m-consistency">-</div>
+                  <div class="arrow" id="consArrow">▲</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="stackBlock">
+              <div class="k">Favorite tech stacks</div>
+              <div class="chips" id="stackChips"></div>
+
+              <div class="addRow">
+                <input id="stackInput" placeholder="Add a tech (e.g. React)" />
+                <button id="addStack" class="iconBtn">＋</button>
+              </div>
+
+              <div class="mini muted" style="margin-top:8px;">Tap chips to toggle. Saved locally.</div>
+            </div>
           </div>
 
           <div class="card" style="margin-top:12px;">
@@ -91,7 +118,7 @@
         </div>
       </div>
 
-      <a class="link" id="repoLink" href="https://github.com/Aashir-G/github-productivity-dashboard" target="_blank" rel="noreferrer">
+      <a class="link" id="repoLink" href="https://github.com/yourusername/github-productivity-dashboard" target="_blank" rel="noreferrer">
         see github repo
       </a>
     </div>

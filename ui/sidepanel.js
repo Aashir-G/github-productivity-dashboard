@@ -1,5 +1,5 @@
 let currentDays = 7;
-let currentCtx = null;   // { username, repo }
+let currentCtx = null; // { username, repo }
 let lastPayload = null;
 
 // ---------- Typewriter ----------
@@ -8,17 +8,15 @@ function typewriter(el, text, speed = 38) {
   const cursor = document.createElement("span");
   cursor.className = "cursor";
   cursor.textContent = "▍";
-  el.appendChild(document.createTextNode(""));
   el.appendChild(cursor);
 
   let i = 0;
   const timer = setInterval(() => {
     if (i >= text.length) {
       clearInterval(timer);
-      cursor.textContent = ""; // stop cursor once done (optional)
+      cursor.textContent = "";
       return;
     }
-    // insert before cursor
     cursor.insertAdjacentText("beforebegin", text[i]);
     i++;
   }, speed);
@@ -43,39 +41,78 @@ function setActive(selector, matchFn) {
   });
 }
 
+function setTopButtonActive(which) {
+  document.getElementById("btnAnalyze").classList.toggle("active", which === "analyze");
+  document.getElementById("btnRecent").classList.toggle("active", which === "recent");
+}
+
+function forceFade() {
+  const content = document.getElementById("content");
+  content.classList.remove("fadeIn");
+  void content.offsetWidth; // reflow to restart animation
+  content.classList.add("fadeIn");
+}
+
 function showContent(panelName) {
   const content = document.getElementById("content");
   content.classList.remove("hidden");
 
   document.getElementById("panelAnalyze").classList.toggle("hidden", panelName !== "analyze");
   document.getElementById("panelRecent").classList.toggle("hidden", panelName !== "recent");
+
+  forceFade();
+  setTopButtonActive(panelName);
 }
 
 function fmt(n) {
   return Number.isFinite(n) ? String(n) : "-";
 }
 
-function renderBars(daysArr, countsObj) {
+// ---------- Trend hover tooltip ----------
+function attachBarTooltip(daysArr, perDay) {
   const barsEl = document.getElementById("bars");
-  barsEl.innerHTML = "";
-  const max = Math.max(1, ...daysArr.map(d => countsObj[d] || 0));
+  const tip = document.getElementById("tip");
+  if (!barsEl || !tip) return;
 
-  for (const d of daysArr) {
-    const c = countsObj[d] || 0;
-    const bar = document.createElement("div");
-    bar.className = "bar";
-    bar.style.height = `${Math.round((c / max) * 100)}%`;
-    bar.title = `${d}: ${c} pushes`;
-    barsEl.appendChild(bar);
-  }
+  const barNodes = [...barsEl.querySelectorAll(".bar")];
+
+  const hide = () => tip.classList.add("hidden");
+  const show = (bar, idx) => {
+    const day = daysArr[idx];
+    const stats = perDay[day] || { contributions: 0, commits: 0, prs: 0, issues: 0 };
+
+    tip.textContent = `${day}  •  contrib ${stats.contributions}  •  commits ${stats.commits}  •  PRs ${stats.prs}  •  issues ${stats.issues}`;
+    tip.classList.remove("hidden");
+
+    // Position tooltip above hovered bar
+    const barsRect = barsEl.getBoundingClientRect();
+    const barRect = bar.getBoundingClientRect();
+    const x = (barRect.left - barsRect.left) + (barRect.width / 2);
+
+    tip.style.left = `${x}px`;
+  };
+
+  barNodes.forEach((bar, idx) => {
+    bar.addEventListener("mouseenter", () => show(bar, idx));
+    bar.addEventListener("mousemove", () => show(bar, idx));
+    bar.addEventListener("mouseleave", hide);
+  });
+
+  barsEl.addEventListener("mouseleave", hide);
 }
 
-async function copyText(text) {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    return false;
+function renderBars(daysArr, values) {
+  const barsEl = document.getElementById("bars");
+  barsEl.innerHTML = "";
+
+  const max = Math.max(1, ...daysArr.map(d => values[d] || 0));
+
+  for (const d of daysArr) {
+    const v = values[d] || 0;
+    const bar = document.createElement("div");
+    bar.className = "bar";
+    bar.style.height = `${Math.round((v / max) * 100)}%`;
+    barsEl.appendChild(bar);
   }
 }
 
@@ -124,11 +161,79 @@ function renderRecentList(users) {
   }
 }
 
-// ---------- Data / Rendering ----------
+// ---------- Favorite tech stacks ----------
+const DEFAULT_STACKS = [
+  "JavaScript", "TypeScript", "React", "Node.js", "Python", "Java",
+  "SQL", "Firebase", "Chrome Extensions", "Git"
+];
+
+async function loadStacks() {
+  const { fav_stacks } = await chrome.storage.local.get(["fav_stacks"]);
+  if (fav_stacks && Array.isArray(fav_stacks.items) && Array.isArray(fav_stacks.on)) {
+    return fav_stacks;
+  }
+  return { items: DEFAULT_STACKS, on: [] };
+}
+
+async function saveStacks(stacks) {
+  await chrome.storage.local.set({ fav_stacks: stacks });
+}
+
+function renderStacks(stacks) {
+  const wrap = document.getElementById("stackChips");
+  wrap.innerHTML = "";
+
+  stacks.items.forEach((name) => {
+    const chip = document.createElement("div");
+    chip.className = "chip";
+    if (stacks.on.includes(name)) chip.classList.add("on");
+    chip.textContent = name;
+
+    chip.addEventListener("click", async () => {
+      const on = new Set(stacks.on);
+      if (on.has(name)) on.delete(name);
+      else on.add(name);
+      stacks.on = [...on];
+      await saveStacks(stacks);
+      renderStacks(stacks);
+    });
+
+    wrap.appendChild(chip);
+  });
+}
+
+async function addStack() {
+  const input = document.getElementById("stackInput");
+  const raw = input.value.trim();
+  if (!raw) return;
+
+  const stacks = await loadStacks();
+  const exists = stacks.items.some(x => x.toLowerCase() === raw.toLowerCase());
+  if (!exists) stacks.items = [raw, ...stacks.items].slice(0, 18);
+
+  input.value = "";
+  await saveStacks(stacks);
+  renderStacks(stacks);
+}
+
+// ---------- Rendering ----------
 function setContextPill(ctx) {
   const pill = document.getElementById("ctxPill");
   if (!ctx) pill.textContent = "No profile detected";
   else pill.textContent = ctx.repo ? `${ctx.username}/${ctx.repo}` : ctx.username;
+}
+
+function setConsistencyUI(percent) {
+  const arrow = document.getElementById("consArrow");
+  arrow.classList.remove("good", "bad");
+
+  if (percent >= 50) {
+    arrow.textContent = "▲";
+    arrow.classList.add("good");
+  } else {
+    arrow.textContent = "▼";
+    arrow.classList.add("bad");
+  }
 }
 
 async function analyzeCurrentTab() {
@@ -150,7 +255,6 @@ async function analyzeUsername(username) {
   setContextPill(currentCtx || { username, repo: null });
 
   document.getElementById("foot").textContent = "Loading...";
-  document.getElementById("exportStatus").textContent = "";
 
   const res = await chrome.runtime.sendMessage({
     type: "FETCH_ANALYTICS",
@@ -166,37 +270,45 @@ async function analyzeUsername(username) {
   const { metrics, rate, fetchedAt } = res.payload;
   lastPayload = res.payload;
 
-  document.getElementById("m-pushes").textContent = fmt(metrics.pushesInWindow);
-  document.getElementById("m-streak").textContent =
-    `${metrics.streakDays} day${metrics.streakDays === 1 ? "" : "s"}`;
-  document.getElementById("m-best").textContent =
-    `${metrics.bestDay} (${metrics.bestDayCount})`;
+  // KPIs
+  document.getElementById("m-contrib").textContent = fmt(metrics.totals.contributions);
+  document.getElementById("m-breakdown").textContent =
+    `commits ${metrics.totals.commits} • PRs ${metrics.totals.prs} • issues ${metrics.totals.issues}`;
 
-  renderBars(metrics.windowDays, metrics.pushesPerDay);
+  document.getElementById("m-beststreak").textContent = `${metrics.bestStreak} days`;
+  document.getElementById("m-best").textContent = metrics.bestDay;
+  document.getElementById("m-bestcount").textContent = `${metrics.bestDayCount} contributions`;
+
+  // Trend uses contributions per day now
+  renderBars(metrics.windowDays, metrics.contributionsPerDay);
+
+  // Build per-day detailed object for tooltip
+  const perDay = {};
+  for (const d of metrics.windowDays) {
+    perDay[d] = {
+      contributions: metrics.contributionsPerDay[d] || 0,
+      commits: metrics.commitsPerDay[d] || 0,
+      prs: metrics.prsPerDay[d] || 0,
+      issues: metrics.issuesPerDay[d] || 0
+    };
+  }
+  attachBarTooltip(metrics.windowDays, perDay);
+
+  // Insights
+  document.getElementById("m-avgcommits").textContent = metrics.avgCommitsPerDay.toFixed(1);
+  document.getElementById("m-consistency").textContent = `${metrics.consistency}%`;
+  setConsistencyUI(metrics.consistency);
 
   const rem = rate?.remaining ?? "-";
   document.getElementById("foot").textContent =
     `Updated ${new Date(fetchedAt).toLocaleString()} • API remaining: ${rem}`;
 
+  // Recent profiles
   const recent = await pushRecentUser(username);
   renderRecentList(recent);
 }
 
-function buildResumeBullet() {
-  if (!lastPayload) {
-    return "Built a Chrome Extension side panel that analyzes GitHub productivity using the GitHub REST API and displays streak + trend insights.";
-  }
-  const { username, days, metrics } = lastPayload;
-  return `Built a Chrome Extension (Side Panel) using JavaScript + GitHub REST API to visualize ${days}-day activity (${metrics.pushesInWindow} pushes), streaks, and trends for rapid productivity insights.`;
-}
-
-function buildSummary() {
-  if (!lastPayload) return "No data yet. Click Analyze profile.";
-  const { username, days, metrics } = lastPayload;
-  return `GitHubDash • ${username} • ${days}d • pushes=${metrics.pushesInWindow}, streak=${metrics.streakDays}d, best=${metrics.bestDay} (${metrics.bestDayCount})`;
-}
-
-// ---------- Settings ----------
+// ---------- Token ----------
 async function loadToken() {
   const { gh_token } = await chrome.storage.sync.get(["gh_token"]);
   document.getElementById("token").value = gh_token || "";
@@ -230,17 +342,12 @@ document.getElementById("clearRecent").addEventListener("click", async () => {
   renderRecentList([]);
 });
 
-document.getElementById("copyBullet").addEventListener("click", async () => {
-  const ok = await copyText(buildResumeBullet());
-  document.getElementById("exportStatus").textContent = ok ? "Copied resume bullet." : "Copy failed.";
-});
-
-document.getElementById("copySummary").addEventListener("click", async () => {
-  const ok = await copyText(buildSummary());
-  document.getElementById("exportStatus").textContent = ok ? "Copied summary." : "Copy failed.";
-});
-
 document.getElementById("saveToken").addEventListener("click", saveToken);
+
+document.getElementById("addStack").addEventListener("click", addStack);
+document.getElementById("stackInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") addStack();
+});
 
 document.querySelectorAll(".segbtn").forEach(btn => {
   btn.addEventListener("click", async () => {
@@ -253,7 +360,10 @@ document.querySelectorAll(".segbtn").forEach(btn => {
 // ---------- Init ----------
 typewriter(document.getElementById("twTitle"), "Welcome to GitHubDash!", 34);
 setActive(".segbtn", el => Number(el.dataset.days) === currentDays);
+setTopButtonActive("analyze");
 
-// Load recent silently so it’s ready
 getRecentUsers().then(renderRecentList);
 loadToken();
+
+// stacks
+loadStacks().then((stacks) => renderStacks(stacks));
