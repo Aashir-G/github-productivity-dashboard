@@ -94,6 +94,7 @@ function computeContributionMetrics(events, daysWanted) {
 
   for (const d of windowDays) {
     contributionsPerDay[d] = (commitsPerDay[d] || 0) + (prsPerDay[d] || 0) + (issuesPerDay[d] || 0);
+
   }
 
   const contributionsTotal = totalCommits + totalPRs + totalIssues;
