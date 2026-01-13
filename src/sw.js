@@ -1,7 +1,12 @@
 import { githubFetch, usernameEventsUrl } from "./api.js";
 
-const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
-const MAX_EVENT_PAGES = 3; // 3 pages x 100 = up to 300 events
+const CACHE_TTL_MS = 15 * 60 * 1000;
+const MAX_EVENT_PAGES = 3; // up to 300 events
+
+// Allow clicking the extension icon to open the side panel
+chrome.sidePanel
+  .setPanelBehavior({ openPanelOnActionClick: true })
+  .catch(console.error);
 
 async function getToken() {
   const { gh_token } = await chrome.storage.sync.get(["gh_token"]);
@@ -16,9 +21,7 @@ async function getCached(key) {
 }
 
 async function setCached(key, payload) {
-  await chrome.storage.local.set({
-    [key]: { cachedAt: Date.now(), payload }
-  });
+  await chrome.storage.local.set({ [key]: { cachedAt: Date.now(), payload } });
 }
 
 function isoDay(d) {
@@ -42,26 +45,22 @@ function buildWindowDays(daysWanted) {
 
 function computeMetricsFromEvents(events, daysWanted) {
   const windowDays = buildWindowDays(daysWanted);
-
-  // Use PushEvent as "commit-like" activity
-  const pushEvents = events.filter(e => e.type === "PushEvent");
-
   const pushesPerDay = Object.fromEntries(windowDays.map(d => [d, 0]));
-  for (const e of pushEvents) {
+
+  for (const e of events) {
+    if (e.type !== "PushEvent") continue;
     const day = isoDay(e.created_at);
     if (pushesPerDay[day] !== undefined) pushesPerDay[day] += 1;
   }
 
   const pushesInWindow = windowDays.reduce((sum, d) => sum + pushesPerDay[d], 0);
 
-  // Streak: consecutive days ending today with activity
   let streakDays = 0;
   for (let i = windowDays.length - 1; i >= 0; i--) {
     if (pushesPerDay[windowDays[i]] > 0) streakDays++;
     else break;
   }
 
-  // Best day in window
   let bestDay = windowDays[0];
   let bestDayCount = pushesPerDay[bestDay];
   for (const d of windowDays) {
@@ -71,14 +70,7 @@ function computeMetricsFromEvents(events, daysWanted) {
     }
   }
 
-  return {
-    windowDays,
-    pushesPerDay,
-    pushesInWindow,
-    streakDays,
-    bestDay,
-    bestDayCount
-  };
+  return { windowDays, pushesPerDay, pushesInWindow, streakDays, bestDay, bestDayCount };
 }
 
 async function fetchUserEvents(username, token) {
@@ -91,7 +83,6 @@ async function fetchUserEvents(username, token) {
 
     if (Array.isArray(data) && data.length) {
       all = all.concat(data);
-      // If the page came back less than 100, no more pages
       if (data.length < 100) break;
     } else {
       break;
@@ -105,15 +96,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   (async () => {
     try {
       if (msg?.type === "SET_TOKEN") {
-        const token = (msg.token || "").trim();
-        await chrome.storage.sync.set({ gh_token: token });
-        sendResponse({ ok: true });
-        return;
-      }
-
-      if (msg?.type === "SET_OVERLAY") {
-        const enabled = !!msg.enabled;
-        await chrome.storage.sync.set({ overlay_enabled: enabled });
+        await chrome.storage.sync.set({ gh_token: (msg.token || "").trim() });
         sendResponse({ ok: true });
         return;
       }
@@ -123,7 +106,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         const days = Number(msg.days || 14);
 
         if (!username) throw new Error("Missing username");
-        if (![7, 14, 30].includes(days)) throw new Error("Invalid days value");
+        if (![7, 14, 30].includes(days)) throw new Error("Invalid days");
 
         const cacheKey = `analytics:${username}:${days}`;
         const cached = await getCached(cacheKey);
@@ -134,17 +117,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
         const token = await getToken();
         const { events, rate } = await fetchUserEvents(username, token);
-
         const metrics = computeMetricsFromEvents(events, days);
-        const payload = {
-          username,
-          days,
-          metrics,
-          rate,
-          fetchedAt: new Date().toISOString()
-        };
 
+        const payload = { username, days, metrics, rate, fetchedAt: new Date().toISOString() };
         await setCached(cacheKey, payload);
+
         sendResponse({ ok: true, source: "api", payload });
         return;
       }

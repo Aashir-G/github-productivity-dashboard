@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="hero">
+        <div class="logo">🐙</div>
+        <div class="hgroup">
+          <div class="h1">Welcome to GitHubDash</div>
+          <div class="h2">Track your GitHub activity in one place.</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="analyze" class="btn primary">Analyze current page</button>
+        <button id="refresh" class="btn">Refresh</button>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="overview">Overview</button>
+        <button class="tab" data-tab="trend">Trend</button>
+        <button class="tab" data-tab="settings">Settings</button>
+      </div>
+
+      <div class="panel" id="panel-overview">
+        <div class="seg">
+          <button class="segbtn active" data-days="7">7d</button>
+          <button class="segbtn" data-days="14">14d</button>
+          <button class="segbtn" data-days="30">30d</button>
+        </div>
+
+        <div class="grid">
+          <div class="metric">
+            <div class="k">Pushes</div>
+            <div class="v" id="m-pushes">-</div>
+          </div>
+          <div class="metric">
+            <div class="k">Streak</div>
+            <div class="v" id="m-streak">-</div>
+          </div>
+          <div class="metric">
+            <div class="k">Best Day</div>
+            <div class="v" id="m-best">-</div>
+          </div>
+        </div>
+
+        <div class="foot" id="foot">Open a GitHub profile or repo, then click Analyze.</div>
+      </div>
+
+      <div class="panel hidden" id="panel-trend">
+        <div class="card">
+          <div class="cardtitle">Push trend</div>
+          <div class="bars" id="bars"></div>
+        </div>
+        <div class="foot" id="trendFoot"></div>
+      </div>
+
+      <div class="panel hidden" id="panel-settings">
+        <div class="card">
+          <div class="cardtitle">GitHub Token (optional)</div>
+          <div class="muted">Adds higher rate limits and more reliable fetching.</div>
+          <input id="token" type="password" placeholder="Paste token here" />
+          <button id="saveToken" class="btn primary" style="margin-top:10px;">Save token</button>
+          <div class="foot" id="status"></div>
+        </div>
+      </div>
+
+      <a class="link" id="repoLink" href="#" target="_blank" rel="noreferrer">see github repo</a>
+    </div>
+
+    <script src="sidepanel.js"></script>
+  </body>
+</html>

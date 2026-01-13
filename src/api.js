@@ -1,7 +1,5 @@
 export async function githubFetch(url, token) {
-  const headers = {
-    Accept: "application/vnd.github+json"
-  };
+  const headers = { Accept: "application/vnd.github+json" };
   if (token) headers.Authorization = `Bearer ${token}`;
 
   const res = await fetch(url, { headers });
@@ -16,10 +14,7 @@ export async function githubFetch(url, token) {
     );
   }
 
-  return {
-    data: await res.json(),
-    rate: { remaining, reset }
-  };
+  return { data: await res.json(), rate: { remaining, reset } };
 }
 
 export function usernameEventsUrl(username, page = 1) {
