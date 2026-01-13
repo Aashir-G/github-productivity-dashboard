@@ -1,367 +1,227 @@
-# 🐙 GitHub Productivity Dashboard
+# GitHub Productivity Dashboard 📊
 
-A beautiful Chrome extension that tracks your GitHub productivity with detailed analytics on commits, pull requests, code reviews, issues, and more.
+A Chrome extension that tracks your GitHub activity and provides insights into your coding patterns. Simple, clean, and focused on helping you understand your development habits.
 
-![Version](https://img.shields.io/badge/version-3.0.0-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-4285F4?logo=googlechrome&logoColor=white)
+![GitHub API](https://img.shields.io/badge/GitHub-API-181717?logo=github&logoColor=white)
 
-## ✨ Features
+## Features ✨
 
-### 📊 Comprehensive Analytics
-- **Accurate Commit Counting** - Only counts commits you actually authored
-- **Extended Event Tracking** - Commits, PRs, issues, code reviews, comments
-- **Multi-Timeframe Views** - 7, 14, or 30-day analysis windows
-- **Streak Tracking** - Monitor consecutive active days
-- **Consistency Metrics** - Track your coding consistency percentage
+### 📈 Activity Tracking
+- **Contribution metrics** - Track your GitHub contributions over 7, 14, or 30 days
+- **Visual trend chart** - See your activity patterns at a glance
+- **Best day tracking** - Identify your most productive coding sessions
 
-### 🎨 Beautiful UI
-- **Modern Design** - Clean, intuitive interface with smooth animations
-- **Interactive Charts** - Hover over trend bars for detailed daily breakdowns
-- **Dark Mode Support** - Automatic theme switching based on system preferences
-- **Responsive Layout** - Works perfectly on all screen sizes
+### 🏆 Developer Reputation Score
+A comprehensive scoring system (0-1000) that evaluates:
+- **Consistency** - How regularly you contribute
+- **Velocity** - Your daily contribution rate
+- **Quality** - Balanced commit patterns
+- **Collaboration** - Language diversity and engagement
+- **Impact** - Streak longevity and total volume
 
-### 🚀 Advanced Features
-- **Smart Caching** - 15-minute cache with automatic cleanup (max 50 entries)
-- **Data Export** - Export analytics as JSON or CSV
-- **Recent Profiles** - Quick access to recently analyzed users
-- **Tech Stack Manager** - Track your favorite technologies
-- **Keyboard Shortcuts** - Ctrl/Cmd+R to refresh, Ctrl/Cmd+E to export
-- **GitHub Overlay** - Optional productivity card on profile pages
-- **Retry Logic** - Exponential backoff for failed API requests
+**Tier System:**
+- 🌟 Elite (850-1000)
+- ⭐ Excellent (700-849)
+- ✨ Very Good (550-699)
+- 💫 Good (400-549)
+- 🌱 Fair (250-399)
+- 🌟 Developing (0-249)
 
-### 🔒 Privacy & Security
-- **Local Storage** - All data stored locally on your device
-- **Optional Token** - GitHub token support for higher rate limits (5,000/hour)
-- **No Data Collection** - Zero analytics or tracking
-- **Input Validation** - Sanitized inputs to prevent XSS attacks
+### 🎯 Goal Tracking
+- Set weekly contribution goals
+- Visual progress bars
+- Per-user goal persistence
+- Achievement celebrations
 
-## 📦 Installation
+### 🎨 Activity Patterns
+Understand your coding style:
+- **Coding Rhythm** - Power Coder, Consistent Builder, Regular Contributor, etc.
+- **Streak Style** - Marathon Runner, Week Warrior, Sprint Starter, etc.
+- **Most Productive Day** - See when you're at your best
 
-### From Source
+### 📚 Recent Profiles
+- Quick access to recently analyzed profiles
+- One-click re-analysis
+- Stores up to 20 profiles locally
+
+### ⚙️ Smart Features
+- **Intelligent caching** - 15-minute cache to respect API limits
+- **GraphQL + REST API** - Uses GraphQL when token available, falls back to Events API
+- **Rate limit awareness** - Shows remaining API calls
+- **Dark mode support** - Automatically adapts to system preferences
+
+## Installation 🚀
+
+### From Chrome Web Store
+*Coming soon...*
+
+### Manual Installation (Development)
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/github-productivity-dashboard.git
-   cd github-productivity-dashboard
+   git clone https://github.com/Aashir-G/github-dashboard.git
+   cd github-dashboard
    ```
 
-2. **Load into Chrome**
-   - Open Chrome and navigate to `chrome://extensions/`
-   - Enable "Developer mode" (toggle in top right)
+2. **Load in Chrome**
+   - Open `chrome://extensions/`
+   - Enable "Developer mode" (top right)
    - Click "Load unpacked"
    - Select the extension directory
 
-3. **Start using it!**
-   - Click the extension icon to open the side panel
-   - Navigate to any GitHub profile and click "Analyze profile"
+3. **Optional: Add GitHub Token**
+   - Generate a token at [GitHub Settings > Personal Access Tokens](https://github.com/settings/tokens)
+   - No special scopes needed for public data
+   - Add token in extension settings for higher rate limits (5,000/hr vs 60/hr)
 
-## 🎯 Usage
+## Usage 💡
 
-### Analyzing a Profile
+### Analyze Any GitHub Profile
 
-1. **Via Side Panel**
-   - Click the extension icon
-   - Navigate to a GitHub profile in any tab
-   - Click "Analyze profile"
+**Method 1: On GitHub**
+1. Navigate to any GitHub profile
+2. Click the extension icon
+3. Click "Analyze profile"
 
-2. **Via URL**
-   - Visit any GitHub profile (e.g., `github.com/username`)
-   - Open the side panel
-   - The current profile will be auto-detected
+**Method 2: Manual Entry**
+1. Click the extension icon
+2. Enter username in the input field
+3. Click "Go"
 
-3. **From Recent Profiles**
-   - Click "Recent profiles" button
-   - Select any previously analyzed user
+### Switch Time Ranges
+Click the time period buttons (7d, 14d, 30d) to change the analysis window.
 
-### Time Ranges
+### Set Goals
+1. Analyze a profile
+2. Scroll to "Goal Tracking"
+3. Enter your target contributions
+4. Click "Set"
 
-Toggle between different analysis windows:
-- **7 days** - Week snapshot
-- **14 days** - Two-week overview (default)
-- **30 days** - Monthly trends
+### View Recent Profiles
+1. Click "Recent profiles" at the top
+2. Click any profile to re-analyze
 
-### Understanding Metrics
-
-#### Contributions
-Total activity across all event types:
-- Commits (authored by you)
-- Pull requests opened
-- Issues opened
-- Code reviews submitted
-- Comments posted
-
-#### Best Streak
-Maximum number of consecutive days with at least one contribution.
-
-#### Best Day
-The date with the most contributions and the count.
-
-#### Consistency
-Percentage of days in the timeframe with at least one contribution.
-- 🟢 70%+ = Excellent
-- 🟡 40-69% = Good
-- 🔴 <40% = Needs improvement
-
-### Data Export
-
-Export your analytics for external analysis:
-
-1. **JSON Format**
-   - Click "Export as JSON"
-   - Contains complete metrics object
-   - Perfect for programmatic analysis
-
-2. **CSV Format**
-   - Click "Export as CSV"
-   - Day-by-day breakdown
-   - Easy to import into Excel/Google Sheets
-
-### Tech Stack Management
-
-Track your favorite technologies:
-
-1. Click chips to toggle active/inactive
-2. Add custom stacks via the input field
-3. Export your stack list as JSON
-
-*Note: This feature is currently for personal tracking. Future versions may integrate with repository language detection.*
-
-## 🔑 GitHub Token (Optional)
-
-### Why Use a Token?
-
-- **Higher rate limits**: 5,000 requests/hour (vs 60/hour without)
-- **Access to private repos**: See your private activity
-- **Faster refreshes**: No more rate limit errors
-
-### Creating a Token
-
-1. Go to [GitHub Settings → Developer Settings → Personal Access Tokens](https://github.com/settings/tokens)
-2. Click "Generate new token (classic)"
-3. Give it a name like "GitHub Dashboard"
-4. Select scopes:
-   - `public_repo` (for public activity)
-   - `repo` (if you want to include private repos)
-5. Click "Generate token"
-6. Copy the token
-
-### Adding Your Token
-
-1. Open the extension side panel
-2. Scroll to "Settings"
-3. Paste your token in the input field
-4. Click "Save token"
-
-⚠️ **Security Note**: Your token is stored locally in Chrome's encrypted storage and only used for GitHub API requests. Never share your token with anyone.
-
-## 📁 Project Structure
+## File Structure 📁
 
 ```
-github-productivity-dashboard/
-├── manifest.json           # Extension configuration
-├── src/
-│   ├── sw.js              # Service worker (API calls, caching)
-│   ├── api.js             # GitHub API wrapper
-│   ├── content.js         # GitHub profile overlay
-│   └── styles.css         # Overlay styles
-├── ui/
-│   ├── sidepanel.html     # Main UI
-│   ├── sidepanel.css      # UI styles
-│   └── sidepanel.js       # UI logic
-├── icons/
-│   ├── icon16.png
-│   ├── icon32.png
-│   ├── icon48.png
-│   └── icon128.png
-└── README.md
+github-dashboard/
+├── manifest.json          # Extension configuration
+├── sidepanel.html         # Main UI
+├── sidepanel.css          # Styling
+├── sidepanel.js           # UI logic & scoring
+├── sw.js                  # Service worker (data fetching)
+├── api.js                 # GitHub API utilities
+└── README.md             # This file
 ```
 
-## 🛠️ Technical Details
+## API Rate Limits 🚦
 
-### Architecture
+| Auth Type | Rate Limit | Recommended For |
+|-----------|------------|-----------------|
+| No Token | 60/hour | Casual use |
+| With Token | 5,000/hour | Regular use |
 
-**Service Worker** (`sw.js`)
-- Handles all GitHub API requests
-- Implements 15-minute caching with TTL
-- Automatic cache cleanup (max 50 entries)
-- Exponential backoff retry logic (3 attempts)
-- Input validation and sanitization
+The extension uses smart caching (15-minute TTL) to minimize API calls.
 
-**Side Panel** (`sidepanel.html/js/css`)
-- Main analytics dashboard
-- Recent profiles management
-- Tech stack tracking
-- Data export functionality
-- Settings panel
+## Technologies Used 🛠️
 
-**Content Script** (`content.js`)
-- Injects productivity card on GitHub profiles
-- Auto-updates on navigation
-- Respects user's overlay preference
+- **Chrome Extension APIs** - Side panel, storage, messaging
+- **GitHub GraphQL API** - Primary data source (when authenticated)
+- **GitHub REST API** - Fallback for unauthenticated requests
+- **Vanilla JavaScript** - No frameworks, pure performance
+- **CSS Grid/Flexbox** - Responsive layouts
 
-### Event Types Tracked
+## Scoring Algorithm 📐
 
-| Event Type | What It Counts |
-|------------|----------------|
-| `PushEvent` | Commits authored by the user |
-| `PullRequestEvent` | PRs opened |
-| `IssuesEvent` | Issues opened |
-| `PullRequestReviewEvent` | Code reviews submitted |
-| `IssueCommentEvent` | Issue comments |
-| `PullRequestReviewCommentEvent` | PR review comments |
-| `WatchEvent` | Repositories starred |
-| `ReleaseEvent` | Releases published |
+The reputation score is calculated from 5 factors (each 0-200 points):
 
-### Data Processing
-
-**Commit Filtering** - Only counts commits where the author name or email matches the username:
-```javascript
-const userCommits = commits.filter(c => {
-  const authorName = c.author?.name?.toLowerCase();
-  const authorEmail = c.author?.email?.toLowerCase();
-  const user = username.toLowerCase();
-  return authorName === user || authorEmail?.includes(user);
-});
+### Consistency (0-200)
+```
+points = min(200, consistency% × 2.5)
 ```
 
-**Daily Aggregation** - All events grouped by ISO date (YYYY-MM-DD)
+### Velocity (0-200)
+Scaled ranges:
+- 10+ commits/day → 200 points
+- 5-10 commits/day → 120-200 points
+- 2-5 commits/day → 48-120 points
+- 0-2 commits/day → 0-48 points
 
-**Metrics Calculation**:
-- Totals: Sum across entire timeframe
-- Averages: Total divided by number of days
-- Streaks: Consecutive days with >0 contributions
-- Consistency: (Active days / Total days) × 100
+### Quality (0-200)
+Based on commits per active day:
+- 8-20 commits/day → 200 points
+- 5-25 commits/day → 185 points
+- 3-30 commits/day → 170 points
+- 2+ commits/day → 155 points
 
-### Performance Optimizations
+### Collaboration (0-200)
+```
+points = min(200, consistency × 1.2 + languages × 18)
+```
 
-1. **DOM Fragment Usage** - Batch DOM updates to minimize reflows
-2. **Event Delegation** - Efficient event handling for dynamic elements
-3. **Smart Caching** - Reduces API calls by 90%+
-4. **Lazy Loading** - Only fetch data when needed
-5. **Debouncing** - Prevents excessive user interactions
+### Impact (0-200)
+```
+streakScore = min(100, bestStreak × 10)
+volumeScore = min(100, totalContributions × 2)
+points = min(200, streakScore + volumeScore)
+```
 
-### Accessibility Features
+**Total Score** = Sum of all 5 factors (max 1000)
 
-- Semantic HTML5 elements
-- ARIA labels and roles
-- Keyboard navigation support
-- Focus indicators
-- Screen reader friendly
-- High contrast mode support
-- Reduced motion support
+## Privacy 🔒
 
-## 🤝 Contributing
+- **All data stored locally** in Chrome storage
+- **No external servers** - direct GitHub API communication only
+- **Your token never leaves your browser**
+- **No tracking or analytics**
 
-Contributions are welcome! Here's how to help:
+## Contributing 🤝
 
-1. **Fork the repository**
-2. **Create a feature branch**
-   ```bash
-   git checkout -b feature/amazing-feature
-   ```
-3. **Make your changes**
-4. **Test thoroughly**
-5. **Commit with clear messages**
-   ```bash
-   git commit -m "Add amazing feature"
-   ```
-6. **Push to your fork**
-   ```bash
-   git push origin feature/amazing-feature
-   ```
-7. **Open a Pull Request**
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-### Development Guidelines
+### Development Setup
+```bash
+# Clone the repo
+git clone https://github.com/Aashir-G/github-dashboard.git
 
-- Follow existing code style
-- Add comments for complex logic
-- Test on multiple screen sizes
-- Ensure accessibility standards
-- Update documentation as needed
+# Make changes
+# Test by loading unpacked extension in Chrome
 
-## 📝 Changelog
+# Submit PR
+```
 
-### Version 3.0.0 (Current)
+## Known Limitations ⚠️
 
-**✨ New Features**
-- Accurate commit counting (only user-authored)
-- Extended event tracking (reviews, comments, releases)
-- Data export (JSON/CSV)
-- Keyboard shortcuts
-- Dark mode support
-- Retry logic with exponential backoff
-- Cache cleanup system
+- Only tracks public GitHub activity
+- Events API limited to last ~300 events
+- Cannot access private repositories without additional permissions
+- Contribution counts may differ from GitHub's native UI (different counting methods)
 
-**🐛 Bug Fixes**
-- Fixed content script metric names mismatch
-- Fixed incorrect commit attribution
-- Fixed missing event types
-- Fixed storage quota issues
+## Future Ideas 💭
 
-**🎨 UI Improvements**
-- Loading skeleton states
-- Better error messages
-- Improved tooltips with full breakdowns
-- Enhanced accessibility
-- Responsive design refinements
+- [ ] Weekly email summaries
+- [ ] Compare multiple users side-by-side
+- [ ] Organization-wide analytics
+- [ ] Contribution heatmap calendar view
+- [ ] Export data to CSV/JSON
+- [ ] Custom scoring weights
+- [ ] Integration with other Git platforms (GitLab, Bitbucket)
 
-**⚡ Performance**
-- DOM fragment usage
-- Optimized cache management
-- Reduced API calls
-- Faster rendering
+## License 📄
 
-### Version 2.0.0
-- Initial side panel implementation
-- Basic analytics tracking
-- Tech stack management
-- Recent profiles feature
+MIT License - feel free to use this project however you'd like!
 
-### Version 1.0.0
-- Basic extension framework
-- Simple profile overlay
+## Support 💬
 
-## 📄 License
+Found a bug? Have a feature request? 
+- Open an issue on GitHub
+- Or submit a PR!
 
-MIT License - see [LICENSE](LICENSE) file for details
+## Acknowledgments 🙏
 
-## 🙏 Acknowledgments
-
-- GitHub API for providing comprehensive event data
-- Chrome Extensions team for excellent documentation
-- The open source community for inspiration
-
-## 📧 Support
-
-- **Issues**: [GitHub Issues](https://github.com/yourusername/github-productivity-dashboard/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/github-productivity-dashboard/discussions)
-- **Email**: your.email@example.com
-
-## 🗺️ Roadmap
-
-### Upcoming Features
-
-- [ ] **Multi-user comparison** - Compare productivity across users
-- [ ] **Custom date ranges** - Select any date range
-- [ ] **Language analytics** - Track language usage from repos
-- [ ] **Team dashboards** - Aggregate stats for organizations
-- [ ] **Goal setting** - Set and track productivity goals
-- [ ] **Notifications** - Alerts for streak breaks
-- [ ] **Weekly reports** - Automated summaries
-- [ ] **Browser sync** - Sync settings across devices
-- [ ] **Customizable metrics** - Choose which events to track
-- [ ] **Integration with GitHub Projects** - Link to project boards
-
-### Long-term Vision
-
-- AI-powered insights and recommendations
-- Integration with other productivity tools
-- Mobile app companion
-- Team collaboration features
-- Advanced data visualizations
+Built with ❤️ for the GitHub developer community.
 
 ---
 
-**Made with ❤️ by developers, for developers**
-
-⭐ Star this repo if you find it helpful!
+**Made for GitHub** | Track smarter, code better 🚀
