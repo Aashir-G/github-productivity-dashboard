@@ -1,25 +1,26 @@
-function getUsernameFromGitHubPage() {
-  const path = location.pathname.split("/").filter(Boolean);
-  if (path.length >= 1) return path[0];
-  return null;
+const CARD_ID = "ghpd-card";
+
+function parseUsernameFromPath() {
+  const parts = location.pathname.split("/").filter(Boolean);
+  return parts[0] || null;
 }
 
-function createDashboardCard() {
+function createCardShell() {
   const card = document.createElement("section");
-  card.id = "ghpd-card";
+  card.id = CARD_ID;
   card.innerHTML = `
     <div class="ghpd-head">
       <div>
         <div class="ghpd-title">Productivity Dashboard</div>
-        <div class="ghpd-sub">GitHub activity insights</div>
+        <div class="ghpd-sub">Overlay mode</div>
       </div>
       <div class="ghpd-badge" id="ghpd-badge">Loading</div>
     </div>
 
     <div class="ghpd-grid">
       <div class="ghpd-metric">
-        <div class="ghpd-k">Pushes (7d)</div>
-        <div class="ghpd-v" id="m-7d">–</div>
+        <div class="ghpd-k">Pushes (14d)</div>
+        <div class="ghpd-v" id="m-pushes">–</div>
       </div>
       <div class="ghpd-metric">
         <div class="ghpd-k">Streak</div>
@@ -36,15 +37,29 @@ function createDashboardCard() {
       <div class="ghpd-bars" id="bars"></div>
     </div>
 
-    <div class="ghpd-foot" id="ghpd-foot"></div>
+    <div class="ghpd-foot" id="foot"></div>
   `;
   return card;
 }
 
-function renderDashboard(card, payload, source) {
+function mountInLeftColumn(card) {
+  const leftColumn = document.querySelector(".Layout-sidebar");
+  const main = document.querySelector("main");
+
+  if (leftColumn) leftColumn.prepend(card);
+  else if (main) main.prepend(card);
+  else document.body.prepend(card);
+}
+
+function removeCard() {
+  const existing = document.getElementById(CARD_ID);
+  if (existing) existing.remove();
+}
+
+function render(card, payload, source) {
   const { metrics, rate, fetchedAt } = payload;
 
-  card.querySelector("#m-7d").textContent = String(metrics.pushesLast7Days);
+  card.querySelector("#m-pushes").textContent = String(metrics.pushesInWindow);
   card.querySelector("#m-streak").textContent =
     `${metrics.streakDays} day${metrics.streakDays === 1 ? "" : "s"}`;
   card.querySelector("#m-best").textContent =
@@ -58,61 +73,60 @@ function renderDashboard(card, payload, source) {
 
   const days = metrics.windowDays;
   const counts = metrics.pushesPerDay;
-  const max = Math.max(1, ...days.map(d => counts[d]));
+  const max = Math.max(1, ...days.map(d => counts[d] || 0));
 
   for (const d of days) {
+    const c = counts[d] || 0;
     const bar = document.createElement("div");
     bar.className = "ghpd-bar";
-    const h = Math.round((counts[d] / max) * 100);
-    bar.style.height = `${h}%`;
-    bar.title = `${d}: ${counts[d]} pushes`;
+    bar.style.height = `${Math.round((c / max) * 100)}%`;
+    bar.title = `${d}: ${c} pushes`;
     barsEl.appendChild(bar);
   }
 
   const rem = rate?.remaining ?? "?";
-  card.querySelector("#ghpd-foot").textContent =
+  card.querySelector("#foot").textContent =
     `Updated ${new Date(fetchedAt).toLocaleString()} • API remaining: ${rem}`;
 }
 
-function mountCard(card) {
-  // Left profile column on GitHub
-  const leftColumn = document.querySelector(".Layout-sidebar");
-
-  // Main content fallback
-  const main = document.querySelector("main");
-
-  // Force positioning so it never overlaps
-  card.style.position = "relative";
-  card.style.maxWidth = "280px";
-  card.style.marginBottom = "16px";
-
-  if (leftColumn) {
-    leftColumn.prepend(card);
-  } else if (main) {
-    main.prepend(card);
-  } else {
-    document.body.prepend(card);
-  }
-}
-
-(async function init() {
-  if (location.hostname !== "github.com") return;
-
-  const username = getUsernameFromGitHubPage();
-  if (!username) return;
-
-  if (document.getElementById("ghpd-card")) return;
-
-  const card = createDashboardCard();
-  mountCard(card);
-
-  const res = await chrome.runtime.sendMessage({ type: "FETCH_ANALYTICS", username });
-
-  if (!res?.ok) {
-    card.querySelector("#ghpd-badge").textContent = "Error";
-    card.querySelector("#ghpd-foot").textContent = res?.error || "Failed to load analytics.";
+async function injectIfEnabled() {
+  const { overlay_enabled } = await chrome.storage.sync.get(["overlay_enabled"]);
+  if (!overlay_enabled) {
+    removeCard();
     return;
   }
 
-  renderDashboard(card, res.payload, res.source);
-})();
+  if (document.getElementById(CARD_ID)) return;
+
+  if (location.hostname !== "github.com") return;
+
+  const username = parseUsernameFromPath();
+  if (!username) return;
+
+  const card = createCardShell();
+  mountInLeftColumn(card);
+
+  const res = await chrome.runtime.sendMessage({
+    type: "FETCH_ANALYTICS",
+    username,
+    days: 14
+  });
+
+  if (!res?.ok) {
+    card.querySelector("#ghpd-badge").textContent = "Error";
+    card.querySelector("#foot").textContent = res?.error || "Failed to load.";
+    return;
+  }
+
+  render(card, res.payload, res.source);
+}
+
+// Re-run when user toggles overlay
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "sync" && changes.overlay_enabled) {
+    injectIfEnabled();
+  }
+});
+
+// Initial run
+injectIfEnabled();

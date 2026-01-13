@@ -1,10 +1,11 @@
 import { githubFetch, usernameEventsUrl } from "./api.js";
 
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+const MAX_EVENT_PAGES = 3; // 3 pages x 100 = up to 300 events
 
 async function getToken() {
   const { gh_token } = await chrome.storage.sync.get(["gh_token"]);
-  return gh_token || "";
+  return (gh_token || "").trim();
 }
 
 async function getCached(key) {
@@ -26,54 +27,78 @@ function isoDay(d) {
   return x.toISOString().slice(0, 10);
 }
 
-function computeMetricsFromEvents(events) {
-  // Focus on PushEvent for "commit-like" activity
-  const pushEvents = events.filter(e => e.type === "PushEvent");
-
-  // Count pushes per day (last 14 days)
+function buildWindowDays(daysWanted) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const days = [];
-  for (let i = 13; i >= 0; i--) {
+  for (let i = daysWanted - 1; i >= 0; i--) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
     days.push(d.toISOString().slice(0, 10));
   }
+  return days;
+}
 
-  const counts = Object.fromEntries(days.map(d => [d, 0]));
+function computeMetricsFromEvents(events, daysWanted) {
+  const windowDays = buildWindowDays(daysWanted);
+
+  // Use PushEvent as "commit-like" activity
+  const pushEvents = events.filter(e => e.type === "PushEvent");
+
+  const pushesPerDay = Object.fromEntries(windowDays.map(d => [d, 0]));
   for (const e of pushEvents) {
     const day = isoDay(e.created_at);
-    if (counts[day] !== undefined) counts[day] += 1;
+    if (pushesPerDay[day] !== undefined) pushesPerDay[day] += 1;
   }
 
-  // Last 7 days total
-  const last7 = days.slice(-7).reduce((sum, d) => sum + counts[d], 0);
+  const pushesInWindow = windowDays.reduce((sum, d) => sum + pushesPerDay[d], 0);
 
-  // Streak: consecutive days ending today with count > 0
-  let streak = 0;
-  for (let i = days.length - 1; i >= 0; i--) {
-    if (counts[days[i]] > 0) streak++;
+  // Streak: consecutive days ending today with activity
+  let streakDays = 0;
+  for (let i = windowDays.length - 1; i >= 0; i--) {
+    if (pushesPerDay[windowDays[i]] > 0) streakDays++;
     else break;
   }
 
-  // Most active day in last 14 days
-  let bestDay = days[0], bestVal = counts[bestDay];
-  for (const d of days) {
-    if (counts[d] > bestVal) {
-      bestVal = counts[d];
+  // Best day in window
+  let bestDay = windowDays[0];
+  let bestDayCount = pushesPerDay[bestDay];
+  for (const d of windowDays) {
+    if (pushesPerDay[d] > bestDayCount) {
+      bestDayCount = pushesPerDay[d];
       bestDay = d;
     }
   }
 
   return {
-    windowDays: days,
-    pushesPerDay: counts,
-    pushesLast7Days: last7,
-    streakDays: streak,
+    windowDays,
+    pushesPerDay,
+    pushesInWindow,
+    streakDays,
     bestDay,
-    bestDayCount: bestVal
+    bestDayCount
   };
+}
+
+async function fetchUserEvents(username, token) {
+  let all = [];
+  let lastRate = null;
+
+  for (let page = 1; page <= MAX_EVENT_PAGES; page++) {
+    const { data, rate } = await githubFetch(usernameEventsUrl(username, page), token);
+    lastRate = rate;
+
+    if (Array.isArray(data) && data.length) {
+      all = all.concat(data);
+      // If the page came back less than 100, no more pages
+      if (data.length < 100) break;
+    } else {
+      break;
+    }
+  }
+
+  return { events: all, rate: lastRate };
 }
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
@@ -86,11 +111,21 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         return;
       }
 
+      if (msg?.type === "SET_OVERLAY") {
+        const enabled = !!msg.enabled;
+        await chrome.storage.sync.set({ overlay_enabled: enabled });
+        sendResponse({ ok: true });
+        return;
+      }
+
       if (msg?.type === "FETCH_ANALYTICS") {
         const username = msg.username;
-        if (!username) throw new Error("Missing username");
+        const days = Number(msg.days || 14);
 
-        const cacheKey = `analytics:${username}`;
+        if (!username) throw new Error("Missing username");
+        if (![7, 14, 30].includes(days)) throw new Error("Invalid days value");
+
+        const cacheKey = `analytics:${username}:${days}`;
         const cached = await getCached(cacheKey);
         if (cached) {
           sendResponse({ ok: true, source: "cache", payload: cached });
@@ -98,22 +133,27 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         }
 
         const token = await getToken();
-        const { data: events, rate } = await githubFetch(usernameEventsUrl(username), token);
+        const { events, rate } = await fetchUserEvents(username, token);
 
-        const metrics = computeMetricsFromEvents(events);
+        const metrics = computeMetricsFromEvents(events, days);
+        const payload = {
+          username,
+          days,
+          metrics,
+          rate,
+          fetchedAt: new Date().toISOString()
+        };
 
-        const payload = { username, metrics, rate, fetchedAt: new Date().toISOString() };
         await setCached(cacheKey, payload);
-
         sendResponse({ ok: true, source: "api", payload });
         return;
       }
 
-      sendResponse({ ok: false, error: "Unknown message" });
+      sendResponse({ ok: false, error: "Unknown message type" });
     } catch (err) {
-      sendResponse({ ok: false, error: err.message || String(err) });
+      sendResponse({ ok: false, error: err?.message || String(err) });
     }
   })();
 
-  return true; // keep message channel open for async
+  return true;
 });
