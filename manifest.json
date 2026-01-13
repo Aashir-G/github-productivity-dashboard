@@ -6,7 +6,8 @@
   "permissions": ["storage"],
   "host_permissions": ["https://api.github.com/*"],
   "background": {
-    "service_worker": "src/sw.js"
+  "service_worker": "src/sw.js",
+  "type": "module"
   },
   "content_scripts": [
     {
