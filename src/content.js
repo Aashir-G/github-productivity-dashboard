@@ -75,12 +75,24 @@ function renderDashboard(card, payload, source) {
 }
 
 function mountCard(card) {
-  const sidebar = document.querySelector(".Layout-sidebar");
+  // Left profile column on GitHub
+  const leftColumn = document.querySelector(".Layout-sidebar");
+
+  // Main content fallback
   const main = document.querySelector("main");
 
-  if (sidebar) sidebar.prepend(card);
-  else if (main) main.prepend(card);
-  else document.body.prepend(card);
+  // Force positioning so it never overlaps
+  card.style.position = "relative";
+  card.style.maxWidth = "280px";
+  card.style.marginBottom = "16px";
+
+  if (leftColumn) {
+    leftColumn.prepend(card);
+  } else if (main) {
+    main.prepend(card);
+  } else {
+    document.body.prepend(card);
+  }
 }
 
 (async function init() {
