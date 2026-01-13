@@ -1,10 +1,7 @@
 import { githubFetch, usernameEventsUrl } from "./api.js";
 
-const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
-const MAX_EVENT_PAGES = 3; // up to 300 events
-const MAX_CACHE_ENTRIES = 50; // Prevent storage bloat
-const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 1000;
+const CACHE_TTL_MS = 15 * 60 * 1000;
+const MAX_CACHE_ENTRIES = 50;
 
 chrome.sidePanel
   .setPanelBehavior({ openPanelOnActionClick: true })
@@ -35,7 +32,6 @@ async function cleanupOldCache() {
   
   if (cacheKeys.length <= MAX_CACHE_ENTRIES) return;
   
-  // Sort by age, remove oldest
   const sorted = cacheKeys
     .map(k => ({ key: k, age: all[k]?.cachedAt || 0 }))
     .sort((a, b) => a.age - b.age);
@@ -68,14 +64,220 @@ function buildWindowDays(daysWanted) {
   return days;
 }
 
+// ========== Fetch Contribution Data ==========
+
+async function fetchContributionData(username, token, daysWanted) {
+  console.log(`[SW] Fetching data for ${username} (${daysWanted} days)`);
+  
+  // Try GraphQL first if we have a token
+  if (token) {
+    try {
+      const result = await fetchFromGraphQL(username, token, daysWanted);
+      console.log('[SW] Successfully fetched from GraphQL');
+      return result;
+    } catch (err) {
+      console.warn('[SW] GraphQL failed, falling back to Events API:', err.message);
+    }
+  }
+  
+  // Fallback to Events API
+  return await fetchFromEventsAPI(username, token, daysWanted);
+}
+
+async function fetchFromGraphQL(username, token, daysWanted) {
+  const to = new Date();
+  const from = new Date();
+  from.setDate(from.getDate() - daysWanted);
+  
+  const query = `
+    query($username: String!, $from: DateTime!, $to: DateTime!) {
+      user(login: $username) {
+        contributionsCollection(from: $from, to: $to) {
+          contributionCalendar {
+            totalContributions
+            weeks {
+              contributionDays {
+                date
+                contributionCount
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  const response = await fetch('https://api.github.com/graphql', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      query,
+      variables: {
+        username,
+        from: from.toISOString(),
+        to: to.toISOString()
+      }
+    })
+  });
+
+  const remaining = response.headers.get("x-ratelimit-remaining");
+  const reset = response.headers.get("x-ratelimit-reset");
+
+  if (!response.ok) {
+    throw new Error(`GraphQL API returned ${response.status}`);
+  }
+
+  const result = await response.json();
+  
+  if (result.errors) {
+    throw new Error(result.errors[0]?.message || 'GraphQL query failed');
+  }
+
+  const weeks = result.data?.user?.contributionsCollection?.contributionCalendar?.weeks || [];
+  const contributionsByDate = {};
+  
+  for (const week of weeks) {
+    for (const day of week.contributionDays) {
+      contributionsByDate[day.date] = day.contributionCount;
+    }
+  }
+
+  return {
+    contributionsByDate,
+    rate: { remaining, reset }
+  };
+}
+
+async function fetchFromEventsAPI(username, token, daysWanted) {
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - daysWanted);
+  cutoffDate.setHours(0, 0, 0, 0);
+
+  const contributionsByDate = {};
+  const windowDays = buildWindowDays(daysWanted);
+  
+  // Initialize all days to 0
+  for (const day of windowDays) {
+    contributionsByDate[day] = 0;
+  }
+
+  let allEvents = [];
+  let lastRate = null;
+  let shouldContinue = true;
+  
+  // Fetch up to 10 pages of events
+  for (let page = 1; page <= 10 && shouldContinue; page++) {
+    try {
+      const { data, rate } = await githubFetch(usernameEventsUrl(username, page), token);
+      lastRate = rate;
+
+      if (!Array.isArray(data) || data.length === 0) {
+        console.log(`[SW] No more events at page ${page}`);
+        break;
+      }
+
+      let eventsInWindow = 0;
+      
+      for (const event of data) {
+        if (!event.created_at) continue;
+        
+        const eventDate = new Date(event.created_at);
+        
+        // Stop if we've gone past the cutoff
+        if (eventDate < cutoffDate) {
+          shouldContinue = false;
+          break;
+        }
+        
+        const day = isoDay(event.created_at);
+        
+        // Only count events within our window
+        if (contributionsByDate[day] !== undefined) {
+          eventsInWindow++;
+          
+          // Count different types of contributions
+          if (event.type === "PushEvent") {
+            // Count commits in the push
+            const commits = event.payload?.commits?.length || 1;
+            contributionsByDate[day] += commits;
+          } 
+          else if (event.type === "PullRequestEvent" && event.payload?.action === "opened") {
+            contributionsByDate[day] += 1;
+          }
+          else if (event.type === "IssuesEvent" && event.payload?.action === "opened") {
+            contributionsByDate[day] += 1;
+          }
+          else if (event.type === "PullRequestReviewEvent") {
+            contributionsByDate[day] += 1;
+          }
+          else if (event.type === "CreateEvent" && event.payload?.ref_type === "repository") {
+            contributionsByDate[day] += 1;
+          }
+        }
+      }
+
+      console.log(`[SW] Page ${page}: ${data.length} events, ${eventsInWindow} in window`);
+
+      // If we got less than 100 events, this is the last page
+      if (data.length < 100) {
+        break;
+      }
+      
+    } catch (err) {
+      console.error(`[SW] Error fetching page ${page}:`, err);
+      break;
+    }
+  }
+
+  console.log('[SW] Contributions by date:', contributionsByDate);
+  
+  return {
+    contributionsByDate,
+    rate: lastRate
+  };
+}
+
+// ========== Language Detection ==========
+
+async function fetchUserLanguages(username, token) {
+  try {
+    const reposUrl = `https://api.github.com/users/${encodeURIComponent(username)}/repos?sort=updated&per_page=30`;
+    const { data: repos } = await githubFetch(reposUrl, token);
+    
+    if (!Array.isArray(repos)) return [];
+    
+    const langCounts = {};
+    
+    for (const repo of repos) {
+      if (repo.fork) continue;
+      if (!repo.language) continue;
+      
+      langCounts[repo.language] = (langCounts[repo.language] || 0) + 1;
+    }
+    
+    const sorted = Object.entries(langCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([lang]) => lang);
+    
+    return sorted;
+  } catch (err) {
+    console.error("[SW] Failed to fetch languages:", err);
+    return [];
+  }
+}
+
 // ========== Metrics Calculation ==========
 
-function maxConsecutiveActiveDays(windowDays, contributionsPerDay) {
+function maxConsecutiveActiveDays(windowDays, contributionsByDate) {
   let best = 0;
   let current = 0;
 
   for (const d of windowDays) {
-    const active = (contributionsPerDay[d] || 0) > 0;
+    const active = (contributionsByDate[d] || 0) > 0;
     if (active) {
       current += 1;
       if (current > best) best = current;
@@ -87,183 +289,43 @@ function maxConsecutiveActiveDays(windowDays, contributionsPerDay) {
   return best;
 }
 
-function computeContributionMetrics(events, daysWanted, username) {
+function computeMetrics(contributionsByDate, daysWanted) {
   const windowDays = buildWindowDays(daysWanted);
 
-  // Initialize counters for all event types
-  const commitsPerDay = Object.fromEntries(windowDays.map(d => [d, 0]));
-  const prsPerDay = Object.fromEntries(windowDays.map(d => [d, 0]));
-  const issuesPerDay = Object.fromEntries(windowDays.map(d => [d, 0]));
-  const reviewsPerDay = Object.fromEntries(windowDays.map(d => [d, 0]));
-  const commentsPerDay = Object.fromEntries(windowDays.map(d => [d, 0]));
-  const starsPerDay = Object.fromEntries(windowDays.map(d => [d, 0]));
-  const releasesPerDay = Object.fromEntries(windowDays.map(d => [d, 0]));
-  const contributionsPerDay = Object.fromEntries(windowDays.map(d => [d, 0]));
+  let totalContributions = 0;
 
-  let totalCommits = 0;
-  let totalPRs = 0;
-  let totalIssues = 0;
-  let totalReviews = 0;
-  let totalComments = 0;
-  let totalStars = 0;
-  let totalReleases = 0;
-
-  for (const e of events) {
-    const day = isoDay(e.created_at);
-    if (commitsPerDay[day] === undefined) continue;
-
-    // Count only commits authored by the user
-    if (e.type === "PushEvent") {
-      const userCommits = Array.isArray(e.payload?.commits)
-        ? e.payload.commits.filter(c => {
-            const authorName = c.author?.name?.toLowerCase();
-            const authorEmail = c.author?.email?.toLowerCase();
-            const user = username.toLowerCase();
-            return authorName === user || authorEmail?.includes(user);
-          }).length
-        : 0;
-      
-      commitsPerDay[day] += userCommits;
-      totalCommits += userCommits;
-    }
-
-    // Pull Requests
-    if (e.type === "PullRequestEvent" && e.payload?.action === "opened") {
-      prsPerDay[day] += 1;
-      totalPRs += 1;
-    }
-
-    // Issues
-    if (e.type === "IssuesEvent" && e.payload?.action === "opened") {
-      issuesPerDay[day] += 1;
-      totalIssues += 1;
-    }
-
-    // Code Reviews
-    if (e.type === "PullRequestReviewEvent") {
-      reviewsPerDay[day] += 1;
-      totalReviews += 1;
-    }
-
-    // Comments (Issues + PR Review Comments)
-    if (e.type === "IssueCommentEvent" || e.type === "PullRequestReviewCommentEvent") {
-      commentsPerDay[day] += 1;
-      totalComments += 1;
-    }
-
-    // Stars given
-    if (e.type === "WatchEvent" && e.payload?.action === "started") {
-      starsPerDay[day] += 1;
-      totalStars += 1;
-    }
-
-    // Releases
-    if (e.type === "ReleaseEvent" && e.payload?.action === "published") {
-      releasesPerDay[day] += 1;
-      totalReleases += 1;
-    }
+  for (const day of windowDays) {
+    totalContributions += contributionsByDate[day] || 0;
   }
 
-  // Calculate total contributions per day
-  for (const d of windowDays) {
-    contributionsPerDay[d] = 
-      (commitsPerDay[d] || 0) + 
-      (prsPerDay[d] || 0) + 
-      (issuesPerDay[d] || 0) +
-      (reviewsPerDay[d] || 0) +
-      (commentsPerDay[d] || 0);
-  }
-
-  const contributionsTotal = totalCommits + totalPRs + totalIssues + totalReviews + totalComments;
-
-  // Best day by contributions
+  // Best day
   let bestDay = windowDays[0];
-  let bestDayCount = contributionsPerDay[bestDay] || 0;
+  let bestDayCount = contributionsByDate[bestDay] || 0;
   for (const d of windowDays) {
-    if ((contributionsPerDay[d] || 0) > bestDayCount) {
-      bestDayCount = contributionsPerDay[d] || 0;
+    if ((contributionsByDate[d] || 0) > bestDayCount) {
+      bestDayCount = contributionsByDate[d] || 0;
       bestDay = d;
     }
   }
 
-  const bestStreak = maxConsecutiveActiveDays(windowDays, contributionsPerDay);
-
-  // Active days + consistency
-  const activeDays = windowDays.reduce((acc, d) => acc + ((contributionsPerDay[d] || 0) > 0 ? 1 : 0), 0);
+  const bestStreak = maxConsecutiveActiveDays(windowDays, contributionsByDate);
+  const activeDays = windowDays.reduce((acc, d) => acc + ((contributionsByDate[d] || 0) > 0 ? 1 : 0), 0);
   const consistency = windowDays.length ? Math.round((activeDays / windowDays.length) * 100) : 0;
-
-  // Averages
-  const avgCommitsPerDay = windowDays.length ? (totalCommits / windowDays.length) : 0;
-  const avgContributionsPerDay = windowDays.length ? (contributionsTotal / windowDays.length) : 0;
+  const avgPerDay = windowDays.length ? (totalContributions / windowDays.length) : 0;
 
   return {
     windowDays,
-    commitsPerDay,
-    prsPerDay,
-    issuesPerDay,
-    reviewsPerDay,
-    commentsPerDay,
-    starsPerDay,
-    releasesPerDay,
-    contributionsPerDay,
+    pushesPerDay: contributionsByDate,
     totals: {
-      commits: totalCommits,
-      prs: totalPRs,
-      issues: totalIssues,
-      reviews: totalReviews,
-      comments: totalComments,
-      stars: totalStars,
-      releases: totalReleases,
-      contributions: contributionsTotal
+      pushes: totalContributions
     },
     bestDay,
     bestDayCount,
     bestStreak,
     activeDays,
     consistency,
-    avgCommitsPerDay,
-    avgContributionsPerDay
+    avgPushesPerDay: avgPerDay
   };
-}
-
-// ========== API Fetching with Retry ==========
-
-async function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function fetchUserEvents(username, token) {
-  let all = [];
-  let lastRate = null;
-  let retries = 0;
-
-  for (let page = 1; page <= MAX_EVENT_PAGES; page++) {
-    while (retries < MAX_RETRIES) {
-      try {
-        const { data, rate } = await githubFetch(usernameEventsUrl(username, page), token);
-        lastRate = rate;
-
-        if (Array.isArray(data) && data.length) {
-          all = all.concat(data);
-          if (data.length < 100) {
-            return { events: all, rate: lastRate };
-          }
-          break; // Success, move to next page
-        } else {
-          return { events: all, rate: lastRate };
-        }
-      } catch (err) {
-        retries++;
-        if (retries >= MAX_RETRIES) throw err;
-        
-        // Exponential backoff
-        await sleep(RETRY_DELAY_MS * Math.pow(2, retries - 1));
-      }
-    }
-    retries = 0; // Reset for next page
-  }
-
-  return { events: all, rate: lastRate };
 }
 
 // ========== Message Handling ==========
@@ -282,7 +344,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         const username = (msg.username || "").trim();
         const days = Number(msg.days || 14);
 
-        // Validation
         if (!username) throw new Error("Missing username");
         if (!/^[a-zA-Z0-9-]+$/.test(username)) throw new Error("Invalid username format");
         if (![7, 14, 30].includes(days)) throw new Error("Invalid days");
@@ -291,21 +352,23 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         const cached = await getCached(cacheKey);
         
         if (cached) {
+          console.log(`[SW] Returning cached data for ${username}`);
           sendResponse({ ok: true, source: "cache", payload: cached });
           return;
         }
 
         const token = await getToken();
-        const { events, rate } = await fetchUserEvents(username, token);
-
-        const metrics = computeContributionMetrics(events, days, username);
+        const { contributionsByDate, rate } = await fetchContributionData(username, token, days);
+        const languages = await fetchUserLanguages(username, token);
+        const metrics = computeMetrics(contributionsByDate, days);
+        
         const payload = {
           username,
           days,
           metrics,
+          languages,
           rate,
-          fetchedAt: new Date().toISOString(),
-          note: "Counts are based on public events feed. Private activity may not appear."
+          fetchedAt: new Date().toISOString()
         };
 
         await setCached(cacheKey, payload);
@@ -327,7 +390,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
       sendResponse({ ok: false, error: "Unknown message type" });
     } catch (err) {
-      console.error("Service worker error:", err);
+      console.error("[SW] Error:", err);
       sendResponse({ ok: false, error: err?.message || String(err) });
     }
   })();

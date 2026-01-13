@@ -20,37 +20,16 @@
     "type": "module"
   },
 
-  "content_scripts": [
-    {
-      "matches": ["https://github.com/*"],
-      "js": ["src/content.js"],
-      "css": ["src/styles.css"],
-      "run_at": "document_idle"
-    }
-  ],
-
   "side_panel": {
     "default_path": "ui/sidepanel.html"
   },
 
   "action": {
     "default_title": "Open GitHub Productivity Dashboard",
-    "default_icon": {
-      "16": "icons/icon16.png",
-      "32": "icons/icon32.png",
-      "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
-    }
+    "default_icon": "icon.png"
   },
 
   "icons": {
-    "16": "icons/icon16.png",
-    "32": "icons/icon32.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
-  },
-
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
+    "128": "icon.png"
   }
 }

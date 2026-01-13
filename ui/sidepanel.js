@@ -1,5 +1,5 @@
 let currentDays = 7;
-let currentCtx = null; // { username, repo }
+let currentCtx = null;
 let lastPayload = null;
 
 // ========== Typewriter Effect ==========
@@ -7,7 +7,7 @@ function typewriter(el, text, speed = 38) {
   el.innerHTML = "";
   const cursor = document.createElement("span");
   cursor.className = "cursor";
-  cursor.textContent = "▍";
+  cursor.textContent = "▌";
   el.appendChild(cursor);
 
   let i = 0;
@@ -50,7 +50,7 @@ function setTopButtonActive(which) {
 function forceFade() {
   const content = document.getElementById("content");
   content.classList.remove("fadeIn");
-  void content.offsetWidth; // Force reflow
+  void content.offsetWidth;
   content.classList.add("fadeIn");
 }
 
@@ -70,31 +70,23 @@ function fmt(n) {
 }
 
 function showLoadingSkeleton() {
-  document.getElementById("m-contrib").textContent = "...";
-  document.getElementById("m-breakdown").textContent = "Loading...";
+  document.getElementById("m-pushes").textContent = "...";
   document.getElementById("m-beststreak").textContent = "...";
   document.getElementById("m-best").textContent = "...";
   document.getElementById("m-bestcount").textContent = "...";
-  document.getElementById("m-avgcommits").textContent = "...";
-  document.getElementById("m-avgcontribs").textContent = "...";
+  document.getElementById("m-avgpushes").textContent = "...";
   document.getElementById("m-consistency").textContent = "...";
-  document.getElementById("m-reviews").textContent = "...";
-  document.getElementById("m-comments").textContent = "...";
   document.getElementById("bars").innerHTML = "";
   document.getElementById("foot").textContent = "Loading data...";
 }
 
 function showError(message) {
-  document.getElementById("m-contrib").textContent = "-";
-  document.getElementById("m-breakdown").textContent = "-";
+  document.getElementById("m-pushes").textContent = "-";
   document.getElementById("m-beststreak").textContent = "-";
   document.getElementById("m-best").textContent = "-";
   document.getElementById("m-bestcount").textContent = "-";
-  document.getElementById("m-avgcommits").textContent = "-";
-  document.getElementById("m-avgcontribs").textContent = "-";
+  document.getElementById("m-avgpushes").textContent = "-";
   document.getElementById("m-consistency").textContent = "-";
-  document.getElementById("m-reviews").textContent = "-";
-  document.getElementById("m-comments").textContent = "-";
   document.getElementById("bars").innerHTML = "";
   document.getElementById("foot").textContent = message;
 }
@@ -110,9 +102,9 @@ function attachBarTooltip(daysArr, perDay) {
   const hide = () => tip.classList.add("hidden");
   const show = (bar, idx) => {
     const day = daysArr[idx];
-    const stats = perDay[day] || { contributions: 0, commits: 0, prs: 0, issues: 0, reviews: 0, comments: 0 };
+    const pushes = perDay[day] || 0;
 
-    tip.textContent = `${day} • ${stats.contributions} contrib • ${stats.commits} commits • ${stats.prs} PRs • ${stats.issues} issues • ${stats.reviews} reviews • ${stats.comments} comments`;
+    tip.textContent = `${day} • ${pushes} contribution${pushes === 1 ? '' : 's'}`;
     tip.classList.remove("hidden");
 
     const barsRect = barsEl.getBoundingClientRect();
@@ -199,80 +191,27 @@ function renderRecentList(users) {
   list.appendChild(fragment);
 }
 
-// ========== Tech Stacks ==========
-const DEFAULT_STACKS = [
-  "JavaScript", "TypeScript", "React", "Vue", "Angular", "Node.js", 
-  "Python", "Java", "Go", "Rust", "C++", "C#",
-  "SQL", "MongoDB", "PostgreSQL", "Redis",
-  "Docker", "Kubernetes", "AWS", "Firebase", "Git"
-];
-
-async function loadStacks() {
-  const { fav_stacks } = await chrome.storage.local.get(["fav_stacks"]);
-  if (fav_stacks && Array.isArray(fav_stacks.items) && Array.isArray(fav_stacks.on)) {
-    return fav_stacks;
-  }
-  return { items: DEFAULT_STACKS, on: [] };
-}
-
-async function saveStacks(stacks) {
-  await chrome.storage.local.set({ fav_stacks: stacks });
-}
-
-function renderStacks(stacks) {
+// ========== Languages Display ==========
+function renderLanguages(languages) {
   const wrap = document.getElementById("stackChips");
   const fragment = document.createDocumentFragment();
 
-  stacks.items.forEach((name) => {
-    const chip = document.createElement("div");
-    chip.className = "chip";
-    if (stacks.on.includes(name)) chip.classList.add("on");
-    chip.textContent = name;
-
-    chip.addEventListener("click", async () => {
-      const on = new Set(stacks.on);
-      if (on.has(name)) on.delete(name);
-      else on.add(name);
-      stacks.on = [...on];
-      await saveStacks(stacks);
-      renderStacks(stacks);
+  if (!languages || !languages.length) {
+    const empty = document.createElement("div");
+    empty.className = "muted";
+    empty.textContent = "No languages detected";
+    fragment.appendChild(empty);
+  } else {
+    languages.forEach((lang) => {
+      const chip = document.createElement("div");
+      chip.className = "chip";
+      chip.textContent = lang;
+      fragment.appendChild(chip);
     });
-
-    fragment.appendChild(chip);
-  });
+  }
 
   wrap.innerHTML = "";
   wrap.appendChild(fragment);
-}
-
-async function addStack() {
-  const input = document.getElementById("stackInput");
-  const raw = input.value.trim();
-  if (!raw) return;
-
-  const stacks = await loadStacks();
-  const exists = stacks.items.some(x => x.toLowerCase() === raw.toLowerCase());
-  if (!exists) stacks.items = [raw, ...stacks.items].slice(0, 30);
-
-  input.value = "";
-  await saveStacks(stacks);
-  renderStacks(stacks);
-}
-
-async function exportStacksAsJSON() {
-  const stacks = await loadStacks();
-  const activeStacks = stacks.items.filter(s => stacks.on.includes(s));
-  
-  const dataStr = JSON.stringify({ stacks: activeStacks }, null, 2);
-  const blob = new Blob([dataStr], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "my-tech-stack.json";
-  a.click();
-  
-  URL.revokeObjectURL(url);
 }
 
 // ========== Context & Analysis ==========
@@ -304,7 +243,7 @@ async function analyzeCurrentTab() {
 
   if (!ctx) {
     setContextPill(null);
-    showError("Open a GitHub profile or repo tab, then click Analyze profile.");
+    showError("Open a GitHub profile, then click Analyze profile.");
     return;
   }
 
@@ -317,68 +256,61 @@ async function analyzeUsername(username) {
   showLoadingSkeleton();
 
   try {
+    console.log(`[UI] Requesting analytics for ${username}...`);
+    
     const res = await chrome.runtime.sendMessage({
       type: "FETCH_ANALYTICS",
       username,
       days: currentDays
     });
 
+    console.log("[UI] Response:", res);
+
     if (!res?.ok) {
       showError(res?.error || "Failed to load data. Please try again.");
       return;
     }
 
-    const { metrics, rate, fetchedAt } = res.payload;
+    if (!res.payload?.metrics) {
+      showError("Invalid data received from service worker");
+      console.error("[UI] Payload:", res.payload);
+      return;
+    }
+
+    const { metrics, languages, rate, fetchedAt } = res.payload;
     lastPayload = res.payload;
 
-    // Main metrics
-    document.getElementById("m-contrib").textContent = fmt(metrics.totals.contributions);
-    document.getElementById("m-breakdown").textContent = 
-      `${metrics.totals.commits} commits • ${metrics.totals.prs} PRs • ${metrics.totals.issues} issues`;
-
+    // Main metrics - using contributions
+    document.getElementById("m-pushes").textContent = fmt(metrics.totals.pushes);
     document.getElementById("m-beststreak").textContent = `${metrics.bestStreak} day${metrics.bestStreak === 1 ? '' : 's'}`;
     document.getElementById("m-best").textContent = metrics.bestDay;
-    document.getElementById("m-bestcount").textContent = `${metrics.bestDayCount} contributions`;
+    document.getElementById("m-bestcount").textContent = `${metrics.bestDayCount} contribution${metrics.bestDayCount === 1 ? '' : 's'}`;
 
-    // Trend chart
-    renderBars(metrics.windowDays, metrics.contributionsPerDay);
-
-    // Build detailed per-day stats for tooltips
-    const perDay = {};
-    for (const d of metrics.windowDays) {
-      perDay[d] = {
-        contributions: metrics.contributionsPerDay[d] || 0,
-        commits: metrics.commitsPerDay[d] || 0,
-        prs: metrics.prsPerDay[d] || 0,
-        issues: metrics.issuesPerDay[d] || 0,
-        reviews: metrics.reviewsPerDay[d] || 0,
-        comments: metrics.commentsPerDay[d] || 0
-      };
-    }
-    attachBarTooltip(metrics.windowDays, perDay);
+    // Trend chart - using contributions
+    renderBars(metrics.windowDays, metrics.pushesPerDay);
+    attachBarTooltip(metrics.windowDays, metrics.pushesPerDay);
 
     // Insights
-    document.getElementById("m-avgcommits").textContent = metrics.avgCommitsPerDay.toFixed(1);
-    document.getElementById("m-avgcontribs").textContent = metrics.avgContributionsPerDay.toFixed(1);
+    document.getElementById("m-avgpushes").textContent = metrics.avgPushesPerDay.toFixed(1);
     document.getElementById("m-consistency").textContent = `${metrics.consistency}%`;
     setConsistencyUI(metrics.consistency);
 
-    // Extended metrics
-    document.getElementById("m-reviews").textContent = fmt(metrics.totals.reviews);
-    document.getElementById("m-comments").textContent = fmt(metrics.totals.comments);
+    // Languages
+    renderLanguages(languages);
 
     // Footer
     const source = res.source === "cache" ? "cached" : "live";
     const rem = rate?.remaining ?? "?";
     const timestamp = new Date(fetchedAt).toLocaleString();
     document.getElementById("foot").textContent = 
-      `${source} • ${timestamp} • API calls remaining: ${rem}`;
+      `${source} • ${timestamp} • API: ${rem} remaining`;
 
     // Update recent profiles
     const recent = await pushRecentUser(username);
     renderRecentList(recent);
 
   } catch (err) {
+    console.error("[UI] Error:", err);
     showError(`Error: ${err.message || "Unknown error occurred"}`);
   }
 }
@@ -395,15 +327,13 @@ async function saveToken() {
   
   try {
     const res = await chrome.runtime.sendMessage({ type: "SET_TOKEN", token });
-    statusEl.textContent = res.ok ? "✓ Token saved successfully" : `Error: ${res.error}`;
-    statusEl.style.color = res.ok ? "var(--good)" : "var(--bad)";
+    statusEl.textContent = res.ok ? "✓ Token saved" : `Error: ${res.error}`;
     
     setTimeout(() => {
       statusEl.textContent = "";
     }, 3000);
   } catch (err) {
     statusEl.textContent = `Error: ${err.message}`;
-    statusEl.style.color = "var(--bad)";
   }
 }
 
@@ -433,17 +363,12 @@ async function exportAnalyticsAsCSV() {
   }
 
   const { metrics } = lastPayload;
-  const lines = ["Date,Commits,PRs,Issues,Reviews,Comments,Total Contributions"];
+  const lines = ["Date,Pushes"];
   
   for (const day of metrics.windowDays) {
     lines.push([
       day,
-      metrics.commitsPerDay[day] || 0,
-      metrics.prsPerDay[day] || 0,
-      metrics.issuesPerDay[day] || 0,
-      metrics.reviewsPerDay[day] || 0,
-      metrics.commentsPerDay[day] || 0,
-      metrics.contributionsPerDay[day] || 0
+      metrics.pushesPerDay[day] || 0
     ].join(","));
   }
 
@@ -461,7 +386,7 @@ async function exportAnalyticsAsCSV() {
 
 // ========== Cache Management ==========
 async function clearAllCache() {
-  const confirmed = confirm("Clear all cached analytics data? You'll need to refetch from GitHub API.");
+  const confirmed = confirm("Clear all cached data?");
   if (!confirmed) return;
 
   try {
@@ -470,7 +395,7 @@ async function clearAllCache() {
       alert(`Cleared ${res.cleared} cached entries`);
     }
   } catch (err) {
-    alert(`Error clearing cache: ${err.message}`);
+    alert(`Error: ${err.message}`);
   }
 }
 
@@ -500,12 +425,26 @@ document.getElementById("clearRecent").addEventListener("click", async () => {
 
 document.getElementById("saveToken").addEventListener("click", saveToken);
 
-document.getElementById("addStack").addEventListener("click", addStack);
-document.getElementById("stackInput").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") addStack();
+document.getElementById("btnManualAnalyze")?.addEventListener("click", async () => {
+  const username = document.getElementById("usernameInput").value.trim();
+  if (!username) {
+    alert("Please enter a GitHub username");
+    return;
+  }
+  if (!/^[a-zA-Z0-9-]+$/.test(username)) {
+    alert("Invalid username format. Only letters, numbers, and hyphens allowed.");
+    return;
+  }
+  currentCtx = { username, repo: null };
+  await analyzeUsername(username);
 });
 
-document.getElementById("exportStacks")?.addEventListener("click", exportStacksAsJSON);
+document.getElementById("usernameInput")?.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") {
+    document.getElementById("btnManualAnalyze").click();
+  }
+});
+
 document.getElementById("exportJSON")?.addEventListener("click", exportAnalyticsAsJSON);
 document.getElementById("exportCSV")?.addEventListener("click", exportAnalyticsAsCSV);
 document.getElementById("clearCache")?.addEventListener("click", clearAllCache);
@@ -532,10 +471,9 @@ document.addEventListener("keydown", (e) => {
 });
 
 // ========== Initialization ==========
-typewriter(document.getElementById("twTitle"), "Welcome to GitHubDash!", 34);
+typewriter(document.getElementById("twTitle"), "GitHub Dashboard", 40);
 setActive(".segbtn", el => Number(el.dataset.days) === currentDays);
 setTopButtonActive("analyze");
 
 getRecentUsers().then(renderRecentList);
 loadToken();
-loadStacks().then(renderStacks);

@@ -9,17 +9,16 @@
   <body>
     <div class="wrap">
       <div class="intro">
-        <div class="topHint">Analyze Profile ✧</div>
+        <div class="topHint">PRODUCTIVITY TRACKER</div>
 
         <div class="mascot" aria-hidden="true">
-          <div class="face" role="img" aria-label="Octopus mascot">🐙</div>
+          <div class="face" role="img" aria-label="Dashboard">📊</div>
         </div>
 
         <h1 class="title" id="twTitle"></h1>
 
         <p class="desc">
-          Your personal GitHub productivity dashboard. Contributions here are estimated from
-          public activity: commits, PRs, issues, reviews, and comments.
+          Track GitHub activity based on push events. Simple metrics to understand your coding patterns.
         </p>
 
         <div class="actions">
@@ -36,61 +35,57 @@
         <!-- Analyze panel -->
         <div id="panelAnalyze" class="panel hidden">
           <div class="row">
-            <div class="pill" id="ctxPill" role="status" aria-live="polite">No profile detected</div>
-            <button id="refresh" class="iconBtn" title="Refresh data (Ctrl/Cmd+R)" aria-label="Refresh">↻</button>
+            <div class="pill" id="ctxPill" role="status">No profile detected</div>
+            <button id="refresh" class="iconBtn" title="Refresh data" aria-label="Refresh">↻</button>
           </div>
 
-          <div class="seg" role="tablist" aria-label="Time range selector">
-            <button class="segbtn active" data-days="7" role="tab" aria-selected="true">7d</button>
-            <button class="segbtn" data-days="14" role="tab" aria-selected="false">14d</button>
-            <button class="segbtn" data-days="30" role="tab" aria-selected="false">30d</button>
+          <div class="manualInput">
+            <input 
+              id="usernameInput" 
+              type="text" 
+              placeholder="Or enter username manually..." 
+              aria-label="GitHub username"
+            />
+            <button id="btnManualAnalyze" class="btn primary">Go</button>
+          </div>
+
+          <div class="seg" role="tablist">
+            <button class="segbtn active" data-days="7" role="tab">7d</button>
+            <button class="segbtn" data-days="14" role="tab">14d</button>
+            <button class="segbtn" data-days="30" role="tab">30d</button>
           </div>
 
           <div class="grid">
             <div class="metric">
               <div class="k">Contributions</div>
-              <div class="v" id="m-contrib" aria-live="polite">-</div>
-              <div class="mini" id="m-breakdown">-</div>
+              <div class="v" id="m-pushes">-</div>
             </div>
             <div class="metric">
-              <div class="k">Best streak</div>
-              <div class="v" id="m-beststreak" aria-live="polite">-</div>
-              <div class="mini">max consecutive active days</div>
+              <div class="k">Best Streak</div>
+              <div class="v" id="m-beststreak">-</div>
             </div>
             <div class="metric">
-              <div class="k">Best day</div>
-              <div class="v" id="m-best" aria-live="polite">-</div>
+              <div class="k">Best Day</div>
+              <div class="v" id="m-best">-</div>
               <div class="mini" id="m-bestcount">-</div>
             </div>
           </div>
 
-          <div class="card" style="margin-top:12px;">
+          <div class="card">
             <div class="cardtitle">Activity Trend</div>
             <div class="barsWrap">
-              <div class="bars" id="bars" role="img" aria-label="Activity trend chart"></div>
+              <div class="bars" id="bars" role="img" aria-label="Activity chart"></div>
               <div class="tip hidden" id="tip" role="tooltip"></div>
             </div>
             <div class="foot" id="foot">Click Analyze profile to load data.</div>
           </div>
 
-          <div class="card" style="margin-top:12px;">
-            <div class="cardtitle">Insights & Metrics</div>
+          <div class="card">
+            <div class="cardtitle">Insights</div>
             <div class="insGrid">
               <div class="insBox">
-                <div class="k">Avg commits/day</div>
-                <div class="v" id="m-avgcommits">-</div>
-              </div>
-              <div class="insBox">
-                <div class="k">Avg contrib/day</div>
-                <div class="v" id="m-avgcontribs">-</div>
-              </div>
-              <div class="insBox">
-                <div class="k">Code reviews</div>
-                <div class="v" id="m-reviews">-</div>
-              </div>
-              <div class="insBox">
-                <div class="k">Comments</div>
-                <div class="v" id="m-comments">-</div>
+                <div class="k">Avg/Day</div>
+                <div class="v" id="m-avgpushes">-</div>
               </div>
               <div class="insBox">
                 <div class="k">Consistency</div>
@@ -102,66 +97,42 @@
             </div>
 
             <div class="stackBlock">
-              <div class="k">Favorite tech stacks</div>
-              <div class="chips" id="stackChips" role="group" aria-label="Tech stack tags"></div>
-
-              <div class="addRow">
-                <input 
-                  id="stackInput" 
-                  type="text"
-                  placeholder="Add a tech (e.g. React)" 
-                  aria-label="Add new tech stack"
-                  maxlength="30"
-                />
-                <button id="addStack" class="iconBtn" aria-label="Add stack">＋</button>
-              </div>
-
+              <div class="k">Most Used Languages</div>
+              <div class="chips" id="stackChips"></div>
               <div class="mini muted" style="margin-top:8px;">
-                Tap chips to toggle. Your selections are saved locally.
+                Detected from recent repositories
               </div>
             </div>
           </div>
 
-          <div class="card" style="margin-top:12px;">
-            <div class="cardtitle">Data Export</div>
+          <div class="card">
+            <div class="cardtitle">Export Data</div>
             <div class="exportBtns">
-              <button id="exportJSON" class="btn full" style="margin-bottom:8px;">
+              <button id="exportJSON" class="btn full">
                 Export as JSON
               </button>
               <button id="exportCSV" class="btn full">
                 Export as CSV
               </button>
             </div>
-            <div class="mini muted" style="margin-top:10px;">
-              Download your analytics data for external analysis. Shortcut: Ctrl/Cmd+E
-            </div>
           </div>
 
-          <div class="card" style="margin-top:12px;">
+          <div class="card">
             <div class="cardtitle">Settings</div>
-            <div class="muted">Optional token for higher rate limits (5,000/hour vs 60/hour).</div>
+            <div class="muted">Add a GitHub token for higher rate limits (5,000/hr vs 60/hr).</div>
             <input 
               id="token" 
               type="password" 
-              placeholder="Paste GitHub personal access token (optional)" 
+              placeholder="GitHub personal access token (optional)" 
               aria-label="GitHub token"
-              autocomplete="off"
             />
             <button id="saveToken" class="btn primary full" style="margin-top:10px;">
-              Save token
+              Save Token
             </button>
-            <div class="foot" id="status" role="status" aria-live="polite"></div>
+            <div class="foot" id="status" role="status"></div>
             
-            <div class="mini muted" style="margin-top:14px;">
-              <strong>Security note:</strong> Your token is stored locally and only used for GitHub API requests. 
-              Create a token with <code>public_repo</code> scope at 
-              <a href="https://github.com/settings/tokens" target="_blank" rel="noopener noreferrer">
-                github.com/settings/tokens
-              </a>
-            </div>
-
             <button id="clearCache" class="btn full" style="margin-top:14px;">
-              Clear cached data
+              Clear Cached Data
             </button>
           </div>
         </div>
@@ -170,7 +141,7 @@
         <div id="panelRecent" class="panel hidden">
           <div class="row">
             <div class="pill">Recent profiles</div>
-            <button id="clearRecent" class="iconBtn" title="Clear all recent profiles" aria-label="Clear">✕</button>
+            <button id="clearRecent" class="iconBtn" title="Clear recent" aria-label="Clear">✕</button>
           </div>
 
           <div class="list" id="recentList" role="list">
@@ -181,12 +152,11 @@
 
       <a 
         class="link" 
-        id="repoLink" 
-        href="https://github.com/yourusername/github-productivity-dashboard" 
+        href="https://github.com" 
         target="_blank" 
         rel="noopener noreferrer"
       >
-        View on GitHub
+        Made for GitHub
       </a>
     </div>
 
